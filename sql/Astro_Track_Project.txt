@@ -1,0 +1,2163 @@
+SET SERVEROUTPUT ON; /*If DBMS_OUTPUT.PUT_LINE does not diplay, we have to run SET SERVEROUTPUT ON;*/
+/*==================================================== Team Project: Astro Track ===================================================*/
+DROP TABLE Mission_Observations CASCADE CONSTRAINTS PURGE;
+DROP TABLE Habitable_Planets CASCADE CONSTRAINTS PURGE;
+DROP TABLE Observations CASCADE CONSTRAINTS PURGE;
+
+DROP TABLE CelestialObjects CASCADE CONSTRAINTS PURGE;
+DROP TABLE Events CASCADE CONSTRAINTS PURGE;
+DROP TABLE Affiliations CASCADE CONSTRAINTS PURGE;
+DROP TABLE Researchers CASCADE CONSTRAINTS PURGE;
+DROP TABLE ResearchPapers CASCADE CONSTRAINTS PURGE;
+DROP TABLE Telescopes CASCADE CONSTRAINTS PURGE;
+DROP TABLE Missions CASCADE CONSTRAINTS PURGE;
+
+/*-----------------------------------------------------------------------------------------------------------------------------------*/
+-- 1. CelestialObjects Table
+-- Stores celestial bodies like stars, planets, exoplanets, black holes.
+-- ===========================
+CREATE TABLE CelestialObjects (
+    object_id NUMBER PRIMARY KEY,
+    
+    object_name VARCHAR2(30) NOT NULL,  -- Name is required
+    category VARCHAR2(50) NOT NULL,  -- Category is required
+    distance_light_years NUMBER(16,6) DEFAULT 0,  -- Default value 0 if unknown
+    discovery_date DATE DEFAULT NULL,  -- Can be NULL
+    in_solar_system CHAR(1) DEFAULT 'N',
+    
+    -- For Habitability Analysis
+    habitability_score NUMBER(4,2) DEFAULT 0,  -- 0.0 (inhabitable) to 10.0 (perfect)
+    surface_temperature NUMBER(12,2) DEFAULT NULL,  -- Temperature in Celsius
+    gravity NUMBER(5,2) DEFAULT NULL,  -- Gravity in m/s²
+    
+    -- Gas Composition (New Columns replacing atmosphere_composition)
+    nitrogen CHAR(1) DEFAULT 'N',
+    oxygen CHAR(1) DEFAULT 'N',
+    co2 CHAR(1) DEFAULT 'N',
+    sulfuric_acid CHAR(1) DEFAULT 'N',
+    hydrogen CHAR(1) DEFAULT 'N',
+    helium CHAR(1) DEFAULT 'N',
+    methane CHAR(1) DEFAULT 'N',
+    water_vapor CHAR(1) DEFAULT 'N',
+    silicates CHAR(1) DEFAULT 'N',
+    iron CHAR(1) DEFAULT 'N',
+    nickel CHAR(1) DEFAULT 'N'
+);
+
+
+-- CHECK: To analyze which planets humans can relocate to
+-- ===========================
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_category CHECK (category IN (
+    'Planet', 'Exoplanet', 'Moon', 'Dwarf Planet', 
+    'Asteroid', 'Comet', 'Black Hole', 'Neutron Star', 'Star'
+));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_in_solar_system CHECK (in_solar_system IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_habitability_score CHECK (habitability_score BETWEEN 0.00 AND 10.00);
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_gravity CHECK (gravity BETWEEN 0.0 AND 100.0);
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_nitrogen CHECK (nitrogen IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_oxygen CHECK (oxygen IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_co2 CHECK (co2 IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_sulfuric_acid CHECK (sulfuric_acid IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_hydrogen CHECK (hydrogen IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_helium CHECK (helium IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_methane CHECK (methane IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_water_vapor CHECK (water_vapor IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_silicates CHECK (silicates IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_iron CHECK (iron IN ('Y', 'N'));
+
+ALTER TABLE CelestialObjects 
+ADD CONSTRAINT chk_nickel CHECK (nickel IN ('Y', 'N'));
+
+-- INSERT
+-- ===========================
+-- Planets (4 entries)
+INSERT INTO CelestialObjects 
+VALUES (1, 'Earth', 'Planet', 0.000000, NULL, 'Y', 10.00, 15.0, 1.00,
+        'Y', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (2, 'Mars', 'Planet', 0.000015, TO_DATE('1659-12-28', 'YYYY-MM-DD'), 'Y', 4.00, -60.0, 0.38,
+        'N', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (3, 'Venus', 'Planet', 0.000011, TO_DATE('1610-01-09', 'YYYY-MM-DD'), 'Y', 1.00, 464.0, 0.91,
+        'N', 'N', 'Y', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (4, 'Neptune', 'Planet', 0.000029, TO_DATE('1846-09-23', 'YYYY-MM-DD'), 'Y', 0.00, -214.0, 1.14,
+        'N', 'N', 'N', 'N', 'Y', 'Y', 'Y', 'N', 'N', 'N', 'N');
+
+-- Exoplanets (4 entries)
+INSERT INTO CelestialObjects 
+VALUES (5, 'Gliese 581g', 'Exoplanet', 20.5, TO_DATE('2010-09-29', 'YYYY-MM-DD'), 'N', 7.90, 20.0, 1.10,
+        'Y', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (6, 'Kepler-442b', 'Exoplanet', 1206.0, TO_DATE('2015-01-06', 'YYYY-MM-DD'), 'N', 8.50, 15.5, 0.98,
+        'Y', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (7, 'TRAPPIST-1e', 'Exoplanet', 39.0, TO_DATE('2017-02-22', 'YYYY-MM-DD'), 'N', 6.90, -18.0, 0.93,
+        'Y', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (8, 'TOI 700 d', 'Exoplanet', 101.4, TO_DATE('2020-01-06', 'YYYY-MM-DD'), 'N', 7.10, 19.0, 1.02,
+        'Y', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+-- Moons (4 entries)
+INSERT INTO CelestialObjects 
+VALUES (9, 'Europa', 'Moon', 0.000628, TO_DATE('1610-01-07', 'YYYY-MM-DD'), 'Y', 5.50, -160.0, 1.31,
+        'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (10, 'Titan', 'Moon', 1.222, TO_DATE('1655-03-25', 'YYYY-MM-DD'), 'Y', 4.80, -179.2, 1.35,
+        'Y', 'N', 'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (11, 'Ganymede', 'Moon', 0.000628, TO_DATE('1610-01-07', 'YYYY-MM-DD'), 'Y', 3.80, -160.0, 1.43,
+        'N', 'Y', 'N', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (12, 'Enceladus', 'Moon', 0.000048, TO_DATE('1789-08-28', 'YYYY-MM-DD'), 'Y', 4.00, -201.0, 1.14,
+        'N', 'N', 'N', 'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N');
+
+-- Dwarf Planets & Asteroids (3 entries)
+INSERT INTO CelestialObjects 
+VALUES (13, 'Pluto', 'Dwarf Planet', 0.0006, TO_DATE('1930-02-18', 'YYYY-MM-DD'), 'Y', 2.50, -229.0, 0.62,
+        'N', 'N', 'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (14, 'Ceres', 'Asteroid', 0.0006, TO_DATE('1801-01-01', 'YYYY-MM-DD'), 'Y', 1.30, -38.0, 0.27,
+        'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'Y', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (15, 'Eros', 'Asteroid', 1.458, TO_DATE('1898-08-13', 'YYYY-MM-DD'), 'Y', 0.00, -73.0, NULL,
+        'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'Y', 'Y', 'Y');
+
+-- Comets (2 entries)
+INSERT INTO CelestialObjects 
+VALUES (16, 'Halley Comet', 'Comet', 0.586, TO_DATE('1705-01-01', 'YYYY-MM-DD'), 'Y', 0.00, -200.0, NULL,
+        'N', 'N', 'N', 'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (17, 'Comet NEOWISE', 'Comet', 0.5, TO_DATE('2020-03-27', 'YYYY-MM-DD'), 'Y', 0.00, -190.0, NULL,
+        'N', 'N', 'N', 'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N');
+
+-- Stars (2 entries)
+INSERT INTO CelestialObjects 
+VALUES (18, 'Sirius A', 'Star', 8.6, TO_DATE('1718-03-02', 'YYYY-MM-DD'), 'N', 0.00, 9940.0, 1.71,
+        'N', 'N', 'N', 'N', 'Y', 'Y', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (19, 'Betelgeuse', 'Star', 642.5, TO_DATE('1836-12-05', 'YYYY-MM-DD'), 'N', 0.00, 3500.0, 20.00,
+        'N', 'N', 'N', 'N', 'Y', 'Y', 'N', 'N', 'N', 'N', 'N');
+
+-- Neutron Stars & Black Holes (1 Neutron Star, 1 Black Hole)
+INSERT INTO CelestialObjects 
+VALUES (20, 'Crab Pulsar', 'Neutron Star', 6500.0, TO_DATE('1968-08-12', 'YYYY-MM-DD'), 'N', 0.00, 1000000.0, NULL,
+        'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+INSERT INTO CelestialObjects 
+VALUES (21, 'M87 Black Hole', 'Black Hole', 53000000, TO_DATE('2019-04-10', 'YYYY-MM-DD'), 'N', 0.00, NULL, NULL,
+        'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N');
+
+        
+-- TABLE
+-- ==========================
+SELECT * FROM CelestialObjects;
+
+-- ==================================================================================================================================
+-- 2. Events Table
+-- Tracks astronomical events (eclipses, meteor showers, supernovae).
+-- ===========================
+CREATE TABLE Events (
+    event_id NUMBER PRIMARY KEY,
+    
+    event_name VARCHAR2(50) NOT NULL UNIQUE,  -- No duplicate event names
+    event_type VARCHAR2(50) NOT NULL,
+    event_date DATE NOT NULL,
+    visibility_score NUMBER(3,1) DEFAULT 5.0,  -- Default visibility score
+
+    impact_on_habitability VARCHAR2(19) DEFAULT 'None',  -- Effect on habitability
+    estimated_duration_days NUMBER(5,2) DEFAULT 1  -- Duration in days
+);
+
+-- CHECK
+-- ===========================
+ALTER TABLE Events 
+ADD CONSTRAINT chk_visibility_score CHECK (visibility_score BETWEEN 0.0 AND 10.0);
+
+-- CHECK: Ensure `estimated_duration_days` is positive
+ALTER TABLE Events 
+ADD CONSTRAINT chk_estimated_duration CHECK (estimated_duration_days > 0);
+
+ALTER TABLE Events 
+ADD CONSTRAINT chk_impact_on_habitability CHECK (impact_on_habitability IN ('None', 'Mild Radiation', 'Severe Radiation', 'Climate Shift', 'Atmospheric Changes'));
+
+
+-- INSERT
+-- ===========================
+INSERT INTO Events 
+VALUES (1, 'Total Solar Eclipse', 'Eclipse', TO_DATE('2024-04-08', 'YYYY-MM-DD'), 9.5, 'None', 1);
+
+INSERT INTO Events 
+VALUES (2, 'Lunar Eclipse', 'Eclipse', TO_DATE('2023-11-19', 'YYYY-MM-DD'), 8.2, 'None', 1);
+
+INSERT INTO Events 
+VALUES (3, 'Perseid Meteor Shower', 'Meteor Shower', TO_DATE('2024-08-12', 'YYYY-MM-DD'), 9.0, 'None', 2);
+
+INSERT INTO Events 
+VALUES (4, 'Leonid Meteor Shower', 'Meteor Shower', TO_DATE('2024-11-17', 'YYYY-MM-DD'), 7.5, 'None', 3);
+
+INSERT INTO Events 
+VALUES (5, 'Supernova SN 2023a', 'Supernova', TO_DATE('2023-07-05', 'YYYY-MM-DD'), 10.0, 'Severe Radiation', 100);
+
+INSERT INTO Events 
+VALUES (6, 'GRB 210905A', 'Gamma-Ray Burst', TO_DATE('2021-09-05', 'YYYY-MM-DD'), 6.5, 'Severe Radiation', 0.1);
+
+INSERT INTO Events 
+VALUES (7, 'Geomagnetic Storm G5', 'Solar Storm', TO_DATE('2025-02-14', 'YYYY-MM-DD'), 5.0, 'Mild Radiation', 3);
+
+INSERT INTO Events 
+VALUES (8, 'Comet NEOWISE Perihelion', 'Comet Appearance', TO_DATE('2020-07-23', 'YYYY-MM-DD'), 8.8, 'Atmospheric Changes', 5);
+
+INSERT INTO Events 
+VALUES (9, 'Asteroid 2023 DW Close Approach', 'Asteroid Approach', TO_DATE('2023-03-14', 'YYYY-MM-DD'), 7.0, 'Climate Shift', 1);
+
+INSERT INTO Events 
+VALUES (10, 'Planetary Alignment of 5 Planets', 'Planetary Event', TO_DATE('2024-06-17', 'YYYY-MM-DD'), 9.7, 'None', 1);
+
+INSERT INTO Events 
+VALUES (11, 'GW170817 Neutron Star Collision', 'Black Hole Merger', TO_DATE('2017-08-17', 'YYYY-MM-DD'), 6.0, 'Severe Radiation', 0.5);
+
+INSERT INTO Events 
+VALUES (12, 'CME Solar Storm X9.3', 'Solar Storm', TO_DATE('2017-09-06', 'YYYY-MM-DD'), 4.8, 'Mild Radiation', 2);
+
+INSERT INTO Events 
+VALUES (13, 'Transit of Venus', 'Planetary Transit', TO_DATE('2012-06-05', 'YYYY-MM-DD'), 9.5, 'None', 1);
+
+INSERT INTO Events 
+VALUES (14, 'Discovery of Arrokoth', 'Astronomical Discovery', TO_DATE('2014-06-26', 'YYYY-MM-DD'), 3.5, 'None', 1);
+
+INSERT INTO Events 
+VALUES (15, 'Aurora Borealis Strong Activity', 'Aurora Event', TO_DATE('2023-10-10', 'YYYY-MM-DD'), 8.0, 'Atmospheric Changes', 2);
+
+
+-- TABLE
+-- ==========================
+SELECT * FROM Events;
+
+-- ==================================================================================================================================
+-- 3. Affiliations Table
+-- Stores organizations that fund or conduct space research
+-- ===========================
+CREATE TABLE Affiliations (
+    affiliation_id NUMBER PRIMARY KEY,
+    affiliation_name VARCHAR2(50) NOT NULL UNIQUE  -- Organization name
+);
+
+INSERT INTO Affiliations VALUES (1, 'Independent');
+INSERT INTO Affiliations VALUES (2, 'NASA');
+INSERT INTO Affiliations VALUES (3, 'ESA');
+INSERT INTO Affiliations VALUES (4, 'Harvard University');
+INSERT INTO Affiliations VALUES (5, 'MIT');
+INSERT INTO Affiliations VALUES (6, 'Caltech');
+INSERT INTO Affiliations VALUES (7, 'SETI Institute');
+INSERT INTO Affiliations VALUES (8, 'JAXA');
+INSERT INTO Affiliations VALUES (9, 'CNSA');
+INSERT INTO Affiliations VALUES (10, 'ISRO');
+
+-- TABLE
+-- ==========================
+SELECT * FROM Affiliations;
+
+-- ==================================================================================================================================
+-- 4. Researchers Table
+-- Stores researchers, astronomers, and scientists.
+-- ===========================
+CREATE TABLE Researchers (
+    researcher_id NUMBER PRIMARY KEY,
+    
+    researcher_name VARCHAR2(30) NOT NULL,
+    contact_email VARCHAR2(50) UNIQUE,  -- Email must be unique
+    phone_number VARCHAR2(15) UNIQUE,  -- New Column for phone number
+    
+    affiliation_id NUMBER NOT NULL,
+
+    CONSTRAINT fk_r_affiliation FOREIGN KEY (affiliation_id) REFERENCES Affiliations(affiliation_id) ON DELETE SET NULL
+);
+
+
+-- CHECK:
+ALTER TABLE Researchers 
+ADD CONSTRAINT chk_contact_email CHECK (REGEXP_LIKE(contact_email, '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'));
+
+ALTER TABLE Researchers 
+ADD CONSTRAINT chk_phone_number 
+CHECK (REGEXP_LIKE(phone_number, '^\+\d{1,3}-\d{1,4}-\d{4,10}$'));
+
+
+-- INSERT
+-- ===========================
+-- Insert researchers with proper column order
+INSERT INTO Researchers 
+VALUES (1, 'Dr. Jane Smith', 'jane.smith@nasa.gov', '+1-202-3987145', 2);
+
+INSERT INTO Researchers 
+VALUES (2, 'Dr. Carlos Mendes', 'carlos.mendes@esa.int', '+33-1-64837129', 3);
+
+INSERT INTO Researchers 
+VALUES (3, 'Dr. Olivia Huang', 'olivia.huang@astroresearch.com', '+86-10-73549216', 1);
+
+INSERT INTO Researchers 
+VALUES (4, 'Dr. Robert Taylor', 'robert.taylor@harvard.edu', '+1-617-2098567', 4);
+
+INSERT INTO Researchers 
+VALUES (5, 'Dr. Emily Carter', 'emily.carter@mit.edu', '+1-617-4728394', 5);
+
+INSERT INTO Researchers 
+VALUES (6, 'Dr. Michael Zhang', 'michael.zhang@caltech.edu', '+1-626-9832714', 6);
+
+INSERT INTO Researchers 
+VALUES (7, 'Dr. Samuel Johnson', 'samuel.johnson@seti.org', '+1-650-7823519', 7);
+
+INSERT INTO Researchers 
+VALUES (8, 'Dr. Yuki Tanaka', 'yuki.tanaka@jaxa.jp', '+81-3-94561278', 8);
+
+INSERT INTO Researchers 
+VALUES (9, 'Dr. Wei Liu', 'wei.liu@cnsa.cn', '+86-10-85391742', 9);
+
+INSERT INTO Researchers 
+VALUES (10, 'Dr. Arjun Rao', 'arjun.rao@isro.in', '+91-22-73489261', 10);
+
+INSERT INTO Researchers 
+VALUES (11, 'Dr. Sophia Reynolds', 'sophia.reynolds@nasa.gov', '+1-202-6128947', 2);
+
+INSERT INTO Researchers 
+VALUES (12, 'Dr. Marco Ricci', 'marco.ricci@esa.int', '+33-1-58324967', 3);
+
+INSERT INTO Researchers 
+VALUES (13, 'Dr. Nathan Lewis', 'nathan.lewis@astroindependent.com', '+1-415-7923658', 1);
+
+INSERT INTO Researchers 
+VALUES (14, 'Dr. Alicia Gomez', 'alicia.gomez@harvard.edu', '+1-617-4678923', 4);
+
+INSERT INTO Researchers 
+VALUES (15, 'Dr. Victor Patel', 'victor.patel@mit.edu', '+1-617-5934821', 5);
+
+INSERT INTO Researchers 
+VALUES (16, 'Dr. Zhang Wei', 'zhang.wei@cnsa.cn', '+86-10-64823715', 9);
+
+INSERT INTO Researchers 
+VALUES (17, 'Dr. Thomas Bennett', 'thomas.bennett@seti.org', '+1-650-3827194', 7);
+
+INSERT INTO Researchers 
+VALUES (18, 'Dr. Meera Anand', 'meera.anand@isro.in', '+91-22-94827361', 10);
+
+
+-- TABLE
+-- ==========================
+SELECT * FROM Researchers;
+
+-- ==================================================================================================================================
+-- 5. ResearchPapers Table
+-- Stores published research articles related to astronomy.
+-- ===========================
+CREATE TABLE ResearchPapers (
+    paper_id NUMBER PRIMARY KEY,
+    
+    title VARCHAR2(30) NOT NULL,
+    publication_date DATE DEFAULT NULL,  -- Can be NULL
+    focus_area VARCHAR2(50) DEFAULT 'General Astronomy',
+    journal VARCHAR2(50) DEFAULT 'Unknown Journal',  -- Default journal
+    doi VARCHAR2(50) UNIQUE,  -- (Digital Object Identifier) must be unique
+    paper_score NUMBER(3,2) DEFAULT 0,
+    
+    researcher_id NUMBER,
+    
+    CONSTRAINT fk_rp_researcher FOREIGN KEY (researcher_id) REFERENCES Researchers(researcher_id) ON DELETE SET NULL
+);
+
+
+-- CHECK: Ensure relevance score
+-- ===========================
+ALTER TABLE ResearchPapers 
+ADD CONSTRAINT chk_focus_area CHECK (focus_area IN (
+    'Exoplanets', 'Space Radiation', 'Terraforming', 'Astrobiology', 'General Astronomy', 'Unknown'
+));
+
+ALTER TABLE ResearchPapers 
+ADD CONSTRAINT chk_journal CHECK (journal IN (
+    'Astrophysical Journal', 'Astronomy and Astrophysics', 
+    'Monthly Notices of the Royal Astronomical Society', 'Nature Astronomy', 
+    'Science', 'Icarus', 'Journal of Geophysical Research: Planets', 
+    'Space Science Reviews', 'Acta Astronautica', 'Planetary and Space Science',
+    'Unknown Journal'
+));
+
+-- INSERT
+-- ===========================
+INSERT INTO ResearchPapers 
+VALUES (1, 'Exoplanet Habitability', TO_DATE('2023-03-21', 'YYYY-MM-DD'), 'Exoplanets', 'Astrophysical Journal', '10.1234/astro.2023a', 9.1, 1);
+
+INSERT INTO ResearchPapers 
+VALUES (2, 'Terraforming Mars', TO_DATE('2022-10-12', 'YYYY-MM-DD'), 'Terraforming', 'Nature Astronomy', '10.5678/natastro.2022m', 8.9, 3);
+
+INSERT INTO ResearchPapers 
+VALUES (3, 'Radiation and DNA', TO_DATE('2021-07-25', 'YYYY-MM-DD'), 'Space Radiation', 'Science', '10.8765/sci.2021r', 8.2, 3);
+
+INSERT INTO ResearchPapers 
+VALUES (4, 'Life on Titan', TO_DATE('2020-05-05', 'YYYY-MM-DD'), 'Astrobiology', 'Journal of Geophysical Research: Planets', '10.5432/jgr.2020t', 9.3, 4);
+
+INSERT INTO ResearchPapers 
+VALUES (5, 'Galactic Evolution', TO_DATE('2019-12-11', 'YYYY-MM-DD'), 'General Astronomy', 'Monthly Notices of the Royal Astronomical Society', '10.6543/mnras.2019g', 8.5, 5);
+
+INSERT INTO ResearchPapers 
+VALUES (6, 'Black Hole Mergers', TO_DATE('2023-06-18', 'YYYY-MM-DD'), 'General Astronomy', 'Astronomy and Astrophysics', '10.4444/astro.2023b', 9.6, 3);
+
+INSERT INTO ResearchPapers 
+VALUES (7, 'SETI Radio Signals', TO_DATE('2022-11-14', 'YYYY-MM-DD'), 'Exoplanets', 'Space Science Reviews', '10.3321/ssr.2022s', 8.8, 5);
+
+INSERT INTO ResearchPapers 
+VALUES (8, 'Moon Base Study', TO_DATE('2024-01-10', 'YYYY-MM-DD'), 'Terraforming', 'Icarus', '10.7766/icarus.2024m', 8.7, 8);
+
+INSERT INTO ResearchPapers 
+VALUES (9, 'Mars Surface Study', TO_DATE('2021-08-28', 'YYYY-MM-DD'), 'Terraforming', 'Acta Astronautica', '10.9988/acta.2021m', 9.0, 9);
+
+INSERT INTO ResearchPapers 
+VALUES (10, 'Venus Atmosphere', TO_DATE('2023-02-20', 'YYYY-MM-DD'), 'General Astronomy', 'Planetary and Space Science', '10.4321/pss.2023v', 8.4, 10);
+
+INSERT INTO ResearchPapers 
+VALUES (11, 'Interstellar Objects', TO_DATE('2023-05-05', 'YYYY-MM-DD'), 'Unknown', 'Unknown Journal', '10.7890/unknown.2023i', 6.5, 11);
+
+INSERT INTO ResearchPapers 
+VALUES (12, 'AI in Space', TO_DATE('2022-09-18', 'YYYY-MM-DD'), 'General Astronomy', 'Science', '10.2023/sci.2022a', 8.1, 12);
+
+INSERT INTO ResearchPapers 
+VALUES (13, 'Exoplanet Terraforming', TO_DATE('2020-12-30', 'YYYY-MM-DD'), 'Terraforming', 'Journal of Geophysical Research: Planets', '10.3456/jgr.2020e', 8.9, 13);
+
+INSERT INTO ResearchPapers 
+VALUES (14, 'Advanced Propulsion', TO_DATE('2024-04-01', 'YYYY-MM-DD'), 'General Astronomy', 'Monthly Notices of the Royal Astronomical Society', '10.5678/mnras.2024p', 9.7, 14);
+
+INSERT INTO ResearchPapers 
+VALUES (15, 'Exoplanet Biosignatures', TO_DATE('2021-07-15', 'YYYY-MM-DD'), 'Exoplanets', 'Astronomy and Astrophysics', '10.9087/astro.2021b', 9.4, 15);
+
+INSERT INTO ResearchPapers 
+VALUES (16, 'Galactic Clusters', NULL, 'General Astronomy', 'Unknown Journal', '10.1111/unpublished.2024g', 7.1, 16);
+
+
+-- TABLE
+-- ==========================
+SELECT * FROM ResearchPapers;
+
+-- ==================================================================================================================================
+-- 6. Telescopes Table
+-- Stores telescope details, including location and specs.
+-- ===========================
+CREATE TABLE Telescopes (
+    telescope_id NUMBER PRIMARY KEY,
+    
+    telescope_name VARCHAR2(40) NOT NULL UNIQUE,  -- No duplicate telescope names
+    location VARCHAR2(50) DEFAULT 'Unknown Location',  -- Default location
+    type VARCHAR2(16) NOT NULL,
+    aperture_size NUMBER(5,2) DEFAULT 1.0,  -- Default aperture size 1.0m
+
+    -- New Columns for Habitability Analysis
+    observation_range_ly NUMBER(11) DEFAULT NULL,  -- Max range in light-years
+    -- Columns for Data Type Collected
+    optical CHAR(1) DEFAULT 'N',  
+    infrared CHAR(1) DEFAULT 'N',  
+    ultraviolet CHAR(1) DEFAULT 'N'  
+);
+
+-- CHECK: Ensure `aperture_size` is positive
+-- ===========================
+ALTER TABLE Telescopes 
+ADD CONSTRAINT chk_aperture_size CHECK (aperture_size > 0);
+
+-- CHECK: Ensure `observation_range_ly` is positive
+ALTER TABLE Telescopes 
+ADD CONSTRAINT chk_observation_range CHECK (observation_range_ly >= 0);
+
+ALTER TABLE Telescopes 
+ADD CONSTRAINT chk_optical CHECK (optical IN ('Y', 'N'));
+
+ALTER TABLE Telescopes 
+ADD CONSTRAINT chk_infrared CHECK (infrared IN ('Y', 'N'));
+
+ALTER TABLE Telescopes 
+ADD CONSTRAINT chk_ultraviolet CHECK (ultraviolet IN ('Y', 'N'));
+
+
+-- INSERT
+-- ===========================
+INSERT INTO Telescopes 
+VALUES (1, 'Gran Telescopio Canarias', 'La Palma, Spain', 'Optical', 10.40, 13000000000, 'Y', 'N', 'N');
+
+INSERT INTO Telescopes 
+VALUES (2, 'Keck I', 'Mauna Kea, Hawaii, USA', 'Optical', 10.00, 13000000000, 'Y', 'Y', 'N');
+
+INSERT INTO Telescopes 
+VALUES (3, 'Keck II', 'Mauna Kea, Hawaii, USA', 'Optical', 10.00, 13000000000, 'Y', 'Y', 'N');
+
+INSERT INTO Telescopes 
+VALUES (4, 'South African Large Telescope', 'Northern Cape, South Africa', 'Optical', 10.00, 13000000000, 'Y', 'N', 'N');
+
+INSERT INTO Telescopes 
+VALUES (5, 'Large Binocular Telescope', 'Mount Graham, Arizona, USA', 'Optical', 11.80, 13000000000, 'Y', 'N', 'N');
+
+INSERT INTO Telescopes 
+VALUES (6, 'Atacama Large Millimeter Array', 'Atacama Desert, Chile', 'Radio', 12.00, 13000000000, 'N', 'N', 'N');
+
+INSERT INTO Telescopes 
+VALUES (7, 'Very Large Telescope', 'Paranal Observatory, Chile', 'Optical', 8.20, 13000000000, 'Y', 'Y', 'N');
+
+INSERT INTO Telescopes 
+VALUES (8, 'Subaru Telescope', 'Mauna Kea, Hawaii, USA', 'Optical', 8.20, 13000000000, 'Y', 'Y', 'N');
+
+INSERT INTO Telescopes 
+VALUES (9, 'Hobby-Eberly Telescope', 'Mount Fowlkes, Texas, USA', 'Optical', 10.00, 13000000000, 'Y', 'N', 'N');
+
+INSERT INTO Telescopes 
+VALUES (10, 'Giant Magellan Telescope', 'Las Campanas, Chile', 'Optical', 24.50, 13000000000, 'Y', 'Y', 'N');
+
+INSERT INTO Telescopes 
+VALUES (11, 'Thirty Meter Telescope', 'Mauna Kea, Hawaii, USA', 'Optical', 30.00, 13000000000, 'Y', 'Y', 'N');
+
+INSERT INTO Telescopes 
+VALUES (12, 'James Webb Space Telescope', 'Space (L2 point)', 'Infrared', 6.50, 13600000000, 'N', 'Y', 'N');
+
+INSERT INTO Telescopes 
+VALUES (13, 'Hubble Space Telescope', 'Low Earth Orbit', 'Optical', 2.40, 13400000000, 'Y', 'Y', 'Y');
+
+INSERT INTO Telescopes 
+VALUES (14, 'European Extremely Large Telescope', 'Cerro Armazones, Chile', 'Optical', 39.30, 13000000000, 'Y', 'Y', 'N');
+
+
+
+-- TABLE
+-- ==========================
+SELECT * FROM Telescopes;
+
+-- ==================================================================================================================================
+-- 7. Observations Table
+-- Logs telescope observations, including X-ray data.
+-- ===========================
+CREATE TABLE Observations (
+    observation_id NUMBER PRIMARY KEY,
+    
+    object_id NUMBER NOT NULL,
+    telescope_id NUMBER NOT NULL,
+    researcher_id NUMBER NOT NULL,
+    
+    observation_date DATE NOT NULL,  -- Cannot be NULL
+    xray_flux NUMBER(10,3) DEFAULT 0,  -- Default X-ray flux is 0
+    redshift NUMBER(6,5) DEFAULT 0,  -- Default redshift is 0
+    
+    CONSTRAINT fk_o_object FOREIGN KEY (object_id) REFERENCES CelestialObjects(object_id) ON DELETE CASCADE,
+    CONSTRAINT fk_o_telescope FOREIGN KEY (telescope_id) REFERENCES Telescopes(telescope_id) ON DELETE SET NULL,
+    CONSTRAINT fk_o_researcher FOREIGN KEY (researcher_id) REFERENCES Researchers(researcher_id) ON DELETE SET NULL
+);
+
+-- CHECK
+-- ===========================
+ALTER TABLE Observations 
+ADD CONSTRAINT chk_xray_flux CHECK (xray_flux >= 0);
+
+ALTER TABLE Observations 
+ADD CONSTRAINT chk_redshift CHECK (redshift BETWEEN -1 AND 10);
+
+-- INSERT
+-- ===========================
+-- Observations using Hubble Space Telescope
+INSERT INTO Observations 
+VALUES (1, 1, 1, 1, TO_DATE('2009-03-07', 'YYYY-MM-DD'), 2.314, 0.00231);
+
+INSERT INTO Observations 
+VALUES (2, 2, 1, 2, TO_DATE('2023-05-15', 'YYYY-MM-DD'), 5.678, 0.00457);
+
+-- Observations using James Webb Space Telescope
+INSERT INTO Observations 
+VALUES (3, 3, 2, 3, TO_DATE('2024-02-12', 'YYYY-MM-DD'), 8.934, 0.00781);
+
+INSERT INTO Observations 
+VALUES (4, 4, 2, 4, TO_DATE('2022-11-08', 'YYYY-MM-DD'), 4.672, 0.00328);
+
+-- Observations using Chandra X-ray Observatory
+INSERT INTO Observations 
+VALUES (5, 5, 3, 5, TO_DATE('2015-09-10', 'YYYY-MM-DD'), 15.249, 0.01293);
+
+INSERT INTO Observations 
+VALUES (6, 6, 3, 6, TO_DATE('2020-09-30', 'YYYY-MM-DD'), 12.387, 0.00932);
+
+-- Observations using Very Large Telescope
+INSERT INTO Observations 
+VALUES (7, 7, 4, 7, TO_DATE('2022-07-17', 'YYYY-MM-DD'), 3.567, 0.00292);
+
+INSERT INTO Observations 
+VALUES (8, 8, 4, 8, TO_DATE('2021-03-05', 'YYYY-MM-DD'), 2.901, 0.00145);
+
+-- Observations using Keck Observatory
+INSERT INTO Observations 
+VALUES (9, 9, 5, 9, TO_DATE('2023-08-28', 'YYYY-MM-DD'), 9.231, 0.00653);
+
+INSERT INTO Observations 
+VALUES (10, 10, 5, 10, TO_DATE('2023-01-14', 'YYYY-MM-DD'), 7.653, 0.00512);
+
+-- Observations using ALMA
+INSERT INTO Observations 
+VALUES (11, 11, 6, 11, TO_DATE('2024-03-20', 'YYYY-MM-DD'), 4.235, 0.00302);
+
+INSERT INTO Observations 
+VALUES (12, 12, 6, 12, TO_DATE('2020-12-10', 'YYYY-MM-DD'), 5.812, 0.00467);
+
+-- Observations using Arecibo Radio Telescope
+INSERT INTO Observations 
+VALUES (13, 13, 7, 1, TO_DATE('2021-02-18', 'YYYY-MM-DD'), 11.478, 0.00821);
+
+INSERT INTO Observations 
+VALUES (14, 14, 7, 2, TO_DATE('2019-07-25', 'YYYY-MM-DD'), 10.321, 0.00745);
+
+-- Observations using Spitzer Space Telescope
+INSERT INTO Observations 
+VALUES (15, 15, 8, 3, TO_DATE('2018-06-30', 'YYYY-MM-DD'), 6.134, 0.00412);
+
+INSERT INTO Observations 
+VALUES (16, 16, 8, 4, TO_DATE('2017-11-11', 'YYYY-MM-DD'), 7.451, 0.00587);
+
+-- Observations using FAST Radio Telescope
+INSERT INTO Observations 
+VALUES (17, 17, 9, 5, TO_DATE('2019-05-19', 'YYYY-MM-DD'), 13.912, 0.00987);
+
+INSERT INTO Observations 
+VALUES (18, 18, 9, 6, TO_DATE('2016-08-03', 'YYYY-MM-DD'), 9.654, 0.00712);
+
+-- Observations using Green Bank Telescope
+INSERT INTO Observations 
+VALUES (19, 19, 10, 7, TO_DATE('2015-04-22', 'YYYY-MM-DD'), 8.732, 0.00634);
+
+INSERT INTO Observations 
+VALUES (20, 20, 10, 8, TO_DATE('2014-10-14', 'YYYY-MM-DD'), 10.467, 0.00791);
+
+
+-- TABLE
+-- ===========================
+SELECT * FROM Observations;
+
+-- ==================================================================================================================================
+-- 8. Missions Table
+-- ===========================
+CREATE TABLE Missions (
+    mission_id NUMBER PRIMARY KEY,
+    
+    mission_name VARCHAR2(30) NOT NULL UNIQUE,  -- Unique mission name
+    mission_purpose VARCHAR2(100) DEFAULT 'Unknown',  -- Scientific goal
+    start_date DATE NOT NULL,  -- Mission start date
+    end_date DATE DEFAULT NULL,  -- NULL if ongoing
+    
+    lead_researcher_id NUMBER NOT NULL,  -- Mission leader
+    affiliation_id NUMBER NOT NULL,  -- Links to the Affiliation table
+
+    CONSTRAINT fk_m_researcher FOREIGN KEY (lead_researcher_id) REFERENCES Researchers(researcher_id) ON DELETE SET NULL,
+    CONSTRAINT fk_m_affiliation FOREIGN KEY (affiliation_id) REFERENCES Affiliations(affiliation_id) ON DELETE SET NULL
+);
+
+-- CHECK
+ALTER TABLE Missions 
+ADD CONSTRAINT chk_mission_dates CHECK (end_date IS NULL OR end_date >= start_date);
+
+ALTER TABLE Missions 
+ADD CONSTRAINT chk_mission_purpose CHECK (LENGTH(TRIM(mission_purpose)) > 0);
+
+-- INSERT
+-- ===========================
+INSERT INTO Missions 
+VALUES (1, 'Kepler Mission', 'Exoplanet Detection', TO_DATE('2009-03-07', 'YYYY-MM-DD'), TO_DATE('2018-10-30', 'YYYY-MM-DD'), 1, 2);
+
+INSERT INTO Missions 
+VALUES (2, 'Mars Terraforming', 'Terraforming Mars Research', TO_DATE('2021-06-15', 'YYYY-MM-DD'), NULL, 2, 3);
+
+INSERT INTO Missions 
+VALUES (3, 'Deep Space Radiation', 'Space Radiation Research', TO_DATE('2018-11-22', 'YYYY-MM-DD'), TO_DATE('2022-05-10', 'YYYY-MM-DD'), 3, 1);
+
+INSERT INTO Missions 
+VALUES (4, 'Titan Life Probe', 'Search for Life on Titan', TO_DATE('2024-07-01', 'YYYY-MM-DD'), NULL, 4, 4);
+
+INSERT INTO Missions 
+VALUES (5, 'Milky Way Mapping', 'Galactic Survey', TO_DATE('2015-09-10', 'YYYY-MM-DD'), TO_DATE('2020-12-20', 'YYYY-MM-DD'), 5, 5);
+
+INSERT INTO Missions 
+VALUES (6, 'Event Horizon', 'Black Hole Imaging', TO_DATE('2017-04-05', 'YYYY-MM-DD'), TO_DATE('2021-09-15', 'YYYY-MM-DD'), 6, 6);
+
+INSERT INTO Missions 
+VALUES (7, 'SETI Listening', 'Search for Extraterrestrial Signals', TO_DATE('2010-05-18', 'YYYY-MM-DD'), NULL, 7, 7);
+
+INSERT INTO Missions 
+VALUES (8, 'JAXA Moon Base', 'Lunar Settlement Research', TO_DATE('2022-02-10', 'YYYY-MM-DD'), NULL, 8, 8);
+
+INSERT INTO Missions 
+VALUES (9, 'CNSA Tianwen-1', 'Mars Surface Exploration', TO_DATE('2020-07-23', 'YYYY-MM-DD'), NULL, 9, 9);
+
+INSERT INTO Missions 
+VALUES (10, 'Shukrayaan-1', 'Venus Atmosphere Study', TO_DATE('2023-11-10', 'YYYY-MM-DD'), NULL, 10, 10);
+
+
+-- TABLE
+-- ===========================
+SELECT * FROM Missions;
+
+/*----------------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------------------------*/
+-- 9. Mission_Observations (Bridge Table)
+-- Many-to-Many: (Explain please).
+-- ===========================
+CREATE TABLE Mission_Observations (
+    mission_id NUMBER NOT NULL,
+    observation_id NUMBER NOT NULL,
+    
+    mission_name VARCHAR2(20) NOT NULL,  -- Stores mission name (linked to Missions)
+    observation_role VARCHAR2(50) DEFAULT 'General Observation',
+    data_collected_size NUMBER(10,2) DEFAULT 0,  -- Data size collected in MB/GB
+    observation_success CHAR(1) DEFAULT 'Y' CHECK (observation_success IN ('Y', 'N')),  -- Was the observation successful?
+    last_updated DATE DEFAULT SYSDATE,  -- Track modifications
+    
+    PRIMARY KEY (mission_id, observation_id),
+    CONSTRAINT fk_m_o_mission FOREIGN KEY (mission_id) REFERENCES Missions(mission_id) ON DELETE CASCADE,
+    CONSTRAINT fk_m_o_observation FOREIGN KEY (observation_id) REFERENCES Observations(observation_id) ON DELETE CASCADE
+);
+
+-- CHECK
+-- ===========================
+ALTER TABLE Mission_Observations 
+ADD CONSTRAINT chk_observation_success CHECK (observation_success IN ('Y', 'N'));
+
+ALTER TABLE Mission_Observations 
+ADD CONSTRAINT chk_data_collected_size CHECK (data_collected_size >= 0);
+
+
+-- INSERT
+-- ===========================
+-- 1. Kepler Mission observing Kepler-442b
+INSERT INTO Mission_Observations 
+VALUES (1, 2, 'Kepler Mission', 'Exoplanet Detection', 150.75, 'Y', TO_DATE('2015-01-10', 'YYYY-MM-DD'));
+
+-- 2. Mars Terraforming mission observing Mars
+INSERT INTO Mission_Observations 
+VALUES (2, 4, 'Mars Terraforming', 'Terraforming Studies', 200.50, 'Y', TO_DATE('2021-07-20', 'YYYY-MM-DD'));
+
+-- 3. Deep Space Radiation mission observing TRAPPIST-1e
+INSERT INTO Mission_Observations 
+VALUES (3, 3, 'Deep Space Radiation', 'Radiation Research', 120.30, 'N', TO_DATE('2019-06-25', 'YYYY-MM-DD'));
+
+-- 4. Titan Life Probe observing Titan (Moon of Saturn, assumed as Europa)
+INSERT INTO Mission_Observations 
+VALUES (4, 5, 'Titan Life Probe', 'Search for Microbial Life', 300.80, 'Y', TO_DATE('2024-08-05', 'YYYY-MM-DD'));
+
+-- 5. Milky Way Mapping mission observing Sirius A
+INSERT INTO Mission_Observations 
+VALUES (5, 11, 'Milky Way Mapping', 'Galactic Cartography', 500.00, 'Y', TO_DATE('2017-03-15', 'YYYY-MM-DD'));
+
+-- 6. Event Horizon mission observing M87 Black Hole
+INSERT INTO Mission_Observations 
+VALUES (6, 7, 'Event Horizon', 'Black Hole Imaging', 900.45, 'Y', TO_DATE('2019-04-10', 'YYYY-MM-DD'));
+
+-- 7. SETI Listening mission observing Proxima Centauri b
+INSERT INTO Mission_Observations 
+VALUES (7, 1, 'SETI Listening', 'Extraterrestrial Signals Search', 250.00, 'N', TO_DATE('2011-06-30', 'YYYY-MM-DD'));
+
+-- 8. JAXA Moon Base mission observing Venus
+INSERT INTO Mission_Observations 
+VALUES (8, 8, 'JAXA Moon Base', 'Venus Atmospheric Analysis', 180.40, 'Y', TO_DATE('2023-12-14', 'YYYY-MM-DD'));
+
+-- 9. CNSA Tianwen-1 mission observing Pluto
+INSERT INTO Mission_Observations 
+VALUES (9, 15, 'CNSA Tianwen-1', 'Pluto Surface Study', 350.60, 'N', TO_DATE('2021-10-18', 'YYYY-MM-DD'));
+
+-- 10. Shukrayaan-1 mission observing TOI 700 d
+INSERT INTO Mission_Observations 
+VALUES (10, 9, 'Shukrayaan-1', 'Exoplanetary Atmosphere Study', 275.85, 'Y', TO_DATE('2024-03-22', 'YYYY-MM-DD'));
+
+
+-- TABLE
+-- ===========================
+SELECT * FROM Mission_Observations;
+
+
+-- ==================================================================================================================================
+-- 10. CelestialObjects_Events (Bridge Table)
+-- Many-to-Many:  (Explain please).
+-- ===========================
+CREATE TABLE Habitable_Planets (
+    object_id NUMBER NOT NULL,  -- Links to CelestialObjects (planet/exoplanet)
+    event_id NUMBER NOT NULL,
+    research_id NUMBER NOT NULL,  -- Links to ResearchPapers (scientific basis)
+    
+    -- Key Habitability Criteria
+    is_habitable CHAR(1) DEFAULT 'N',  -- Is it habitable? (Y/N)
+    habitability_reason VARCHAR2(50) DEFAULT 'Unknown',  -- Explanation (e.g., "Breathable atmosphere, liquid water")
+    recommended_population NUMBER DEFAULT NULL,  -- Estimated max population a planet can support
+    last_evaluated DATE DEFAULT SYSDATE,  -- Last time the planet's habitability was evaluated
+    
+    PRIMARY KEY (object_id, event_id, research_id),
+    CONSTRAINT fk_hp_object FOREIGN KEY (object_id) REFERENCES CelestialObjects(object_id),
+    CONSTRAINT fk_hp_events FOREIGN KEY (event_id) REFERENCES Events(event_id),
+    CONSTRAINT fk_hp_research FOREIGN KEY (research_id) REFERENCES ResearchPapers(paper_id)
+);
+
+ALTER TABLE Habitable_Planets 
+ADD CONSTRAINT chk_is_habitable CHECK (is_habitable IN ('Y', 'N'));
+
+ALTER TABLE Habitable_Planets 
+ADD CONSTRAINT chk_recommended_population CHECK (recommended_population IS NULL OR recommended_population >= 0);
+
+-- CHECK
+-- ===========================
+-- 1. Proxima Centauri b (Evaluated by NASA)
+INSERT INTO Habitable_Planets 
+VALUES (1, 1, 1, 'Y', 'Potentially Habitable', 1000000, TO_DATE('2023-08-15', 'YYYY-MM-DD'));
+
+-- 2. Kepler-442b (Evaluated by ESA)
+INSERT INTO Habitable_Planets 
+VALUES (2, 2, 2, 'Y', 'Ideal Conditions', 500000, TO_DATE('2022-10-20', 'YYYY-MM-DD'));
+
+-- 3. TRAPPIST-1e (Evaluated by NASA Spitzer Team)
+INSERT INTO Habitable_Planets 
+VALUES (3, 3, 3, 'N', 'Atmosphere Composition Suitable', 2000, TO_DATE('2023-03-10', 'YYYY-MM-DD'));
+
+-- 4. Mars (Evaluated by ESA)
+INSERT INTO Habitable_Planets 
+VALUES (4, 2, 4, 'N', 'Thin Atmosphere', NULL, TO_DATE('2020-12-05', 'YYYY-MM-DD'));
+
+-- 5. Europa (Evaluated by Harvard)
+INSERT INTO Habitable_Planets 
+VALUES (5, 4, 5, 'Y', 'Subsurface Water Ocean', 150000, TO_DATE('2021-05-22', 'YYYY-MM-DD'));
+
+-- 6. GJ 1214b (Evaluated by Caltech)
+INSERT INTO Habitable_Planets 
+VALUES (6, 6, 6, 'N', 'Extreme Heat', NULL, TO_DATE('2019-07-18', 'YYYY-MM-DD'));
+
+-- 7. TOI 700 d (Evaluated by SETI Institute)
+INSERT INTO Habitable_Planets 
+VALUES (9, 7, 7, 'Y', 'Nitrogen-Rich Atmosphere', NULL, TO_DATE('2024-01-12', 'YYYY-MM-DD'));
+
+-- 8. Earth (Evaluated by Multiple Researchers)
+INSERT INTO Habitable_Planets 
+VALUES (10, 1, 8, 'Y', 'Perfect Conditions', 8000000000, TO_DATE('2024-02-01', 'YYYY-MM-DD'));
+
+-- 9. Venus (Evaluated by NASA)
+INSERT INTO Habitable_Planets 
+VALUES (8, 8, 9, 'N', 'Extreme Greenhouse Effect', NULL, TO_DATE('2021-09-09', 'YYYY-MM-DD'));
+
+-- 10. Pluto (Evaluated by NASA)
+INSERT INTO Habitable_Planets 
+VALUES (15, 9, 10, 'N', 'Too Cold and Thin Atmosphere', NULL, TO_DATE('2018-11-14', 'YYYY-MM-DD'));
+
+-- 11. Ceres (Evaluated by JAXA)
+INSERT INTO Habitable_Planets 
+VALUES (18, 8, 11, 'N', 'Low Gravity and Thin Atmosphere', NULL, TO_DATE('2023-06-25', 'YYYY-MM-DD'));
+
+-- 12. Hale-Bopp (Evaluated by NASA)
+INSERT INTO Habitable_Planets 
+VALUES (17, 10, 12, 'N', 'Icy Body, No Atmosphere', NULL, TO_DATE('2019-04-17', 'YYYY-MM-DD'));
+
+-- 13. Titan (Evaluated by Harvard)
+INSERT INTO Habitable_Planets 
+VALUES (5, 4, 13, 'Y', 'Potential Hydrocarbon Lakes', 100000, TO_DATE('2023-05-30', 'YYYY-MM-DD'));
+
+-- 14. Sirius A (Evaluated by MIT)
+INSERT INTO Habitable_Planets 
+VALUES (11, 5, 14, 'N', 'Main Sequence Star, No Surface', NULL, TO_DATE('2022-02-28', 'YYYY-MM-DD'));
+
+-- 15. Vela Pulsar (Evaluated by NASA)
+INSERT INTO Habitable_Planets 
+VALUES (12, 6, 15, 'N', 'Extreme Radiation and Magnetism', NULL, TO_DATE('2020-11-07', 'YYYY-MM-DD'));
+
+-- 16. Comet NEOWISE (Evaluated by ESA)
+INSERT INTO Habitable_Planets 
+VALUES (19, 2, 16, 'N', 'No Atmosphere, Volatile Surface', 5000, TO_DATE('2020-03-29', 'YYYY-MM-DD'));
+
+-- LHS 1140 b (Evaluated by NASA - High Radiation Exposure)
+INSERT INTO Habitable_Planets 
+VALUES (3, 5, 15, 'N', 'High Radiation from Host Star', NULL, TO_DATE('2022-07-20', 'YYYY-MM-DD'));
+
+-- 18. LHS 1140 b (Evaluated by NASA) - Relating to 'Exoplanet Habitability' (paper_id = 1)
+INSERT INTO Habitable_Planets 
+VALUES (14, 1, 1, 'Y', 'Thick Atmosphere and Liquid Water', 2000000, TO_DATE('2023-10-15', 'YYYY-MM-DD'));
+
+-- 19. WASP-39b (Evaluated by ESA) - Relating to 'Exoplanet Biosignatures' (paper_id = 15)
+INSERT INTO Habitable_Planets 
+VALUES (5, 7, 15, 'N', 'Sulfur Dioxide Detected in Atmosphere', NULL, TO_DATE('2023-11-05', 'YYYY-MM-DD'));
+
+-- 20. K2-18b (Evaluated by SETI) - Relating to 'Exoplanet Terraforming' (paper_id = 13)
+INSERT INTO Habitable_Planets 
+VALUES (14, 9, 13, 'Y', 'Potentially Habitable with Water Vapor', 300000, TO_DATE('2024-01-20', 'YYYY-MM-DD'));
+
+
+-- TABLE
+-- ===========================
+SELECT * FROM Habitable_Planets;
+
+/*==================================================================================================================================*/
+COMMIT;
+
+/*========================================================== SEQUENCES =============================================================*/
+-- Use it to insert sample data
+CREATE SEQUENCE mission_add_seq
+START WITH 11
+INCREMENT BY 1
+NOCACHE
+NOCYCLE;
+
+INSERT INTO missions (mission_id, mission_name, mission_purpose, start_date, end_date, lead_researcher_id, affiliation_id)
+VALUES (mission_add_seq.NEXTVAL, 'Europa Ice Survey', 'Study of Subsurface Oceans', TO_DATE('2025-01-01', 'YYYY-MM-DD'), NULL, 5, 1);
+
+INSERT INTO missions (mission_id, mission_name, mission_purpose, start_date, end_date, lead_researcher_id, affiliation_id)
+VALUES (mission_add_seq.NEXTVAL, 'Artemis II', 'Return Humans to the Moon', TO_DATE('2025-05-01', 'YYYY-MM-DD'), NULL, 6, 2);
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+-- Use it to update table(s)
+CREATE SEQUENCE mission_update_seq
+START WITH 13
+INCREMENT BY 1
+NOCACHE
+NOCYCLE;
+
+UPDATE Missions
+SET mission_id = mission_update_seq.NEXTVAL,
+    mission_purpose = 'Human Survival on the Moon',
+    start_date = SYSDATE,
+    lead_researcher_id = 3,
+    affiliation_id = 1
+WHERE mission_name = 'Artemis II';
+
+SELECT * FROM missions;
+/*==================================================================================================================================*/
+DROP SEQUENCE mission_add_seq;
+DROP SEQUENCE mission_update_seq;
+
+/*====================================================== SEQUENCES + PACKAGES ======================================================*/
+-- Using SEQUENCES to insert table
+CREATE SEQUENCE celestial_add_seq
+START WITH 22
+INCREMENT BY 1
+NOCACHE
+NOCYCLE;
+
+-- Create the Package Specification
+CREATE OR REPLACE PACKAGE CelestialManager AS
+    PROCEDURE AddDefaultCelestialObjects;
+END CelestialManager;
+/
+
+-- Create the Package Body
+CREATE OR REPLACE PACKAGE BODY CelestialManager AS
+
+    -- Private constant (for habitability default score)
+    c_default_score CONSTANT NUMBER := 7.0;
+
+    -- Public procedure to insert 2 celestial objects and display their info
+    PROCEDURE AddDefaultCelestialObjects IS
+        v_id NUMBER;
+
+        -- Variables to hold full row info
+        v_name VARCHAR2(30);
+        v_cat VARCHAR2(50);
+        v_dist NUMBER;
+        v_score NUMBER;
+        v_grav NUMBER;
+    BEGIN
+        -- First object
+        SELECT celestial_add_seq.NEXTVAL INTO v_id FROM dual;
+        INSERT INTO CelestialObjects (
+            object_id, object_name, category, distance_light_years, discovery_date, in_solar_system,
+            habitability_score, surface_temperature, gravity,
+            nitrogen, oxygen, co2, sulfuric_acid, hydrogen, helium, methane, water_vapor, silicates, iron, nickel
+        )
+        VALUES (
+            v_id, 'Proxima b', 'Exoplanet', 4.24, TO_DATE('2016-08-24', 'YYYY-MM-DD'), 'N',
+            c_default_score, 0.0, 1.10,
+            'Y', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N'
+        );
+
+        -- Fetch back the inserted row
+        SELECT object_name, category, distance_light_years, habitability_score, gravity
+        INTO v_name, v_cat, v_dist, v_score, v_grav
+        FROM CelestialObjects
+        WHERE object_id = v_id;
+
+        DBMS_OUTPUT.PUT_LINE('Inserted Object 1:');
+        DBMS_OUTPUT.PUT_LINE('  ID: ' || v_id);
+        DBMS_OUTPUT.PUT_LINE('  Name: ' || v_name);
+        DBMS_OUTPUT.PUT_LINE('  Category: ' || v_cat);
+        DBMS_OUTPUT.PUT_LINE('  Distance: ' || v_dist || ' ly');
+        DBMS_OUTPUT.PUT_LINE('  Habitability Score: ' || v_score);
+        DBMS_OUTPUT.PUT_LINE('  Gravity: ' || v_grav);
+        DBMS_OUTPUT.PUT_LINE('---------------------------');
+
+        -- Second object
+        SELECT celestial_add_seq.NEXTVAL INTO v_id FROM dual;
+        INSERT INTO CelestialObjects (
+            object_id, object_name, category, distance_light_years, discovery_date, in_solar_system,
+            habitability_score, surface_temperature, gravity,
+            nitrogen, oxygen, co2, sulfuric_acid, hydrogen, helium, methane, water_vapor, silicates, iron, nickel
+        )
+        VALUES (
+            v_id, 'OGLE-2016-BLG-1195Lb', 'Exoplanet', 13000, TO_DATE('2017-04-26', 'YYYY-MM-DD'), 'N',
+            c_default_score - 0.5, -220.0, 0.75,
+            'N', 'N', 'Y', 'N', 'N', 'N', 'N', 'N', 'N', 'N', 'N'
+        );
+
+        -- Fetch back the inserted row
+        SELECT object_name, category, distance_light_years, habitability_score, gravity
+        INTO v_name, v_cat, v_dist, v_score, v_grav
+        FROM CelestialObjects
+        WHERE object_id = v_id;
+
+        DBMS_OUTPUT.PUT_LINE('Inserted Object 2:');
+        DBMS_OUTPUT.PUT_LINE('  ID: ' || v_id);
+        DBMS_OUTPUT.PUT_LINE('  Name: ' || v_name);
+        DBMS_OUTPUT.PUT_LINE('  Category: ' || v_cat);
+        DBMS_OUTPUT.PUT_LINE('  Distance: ' || v_dist || ' ly');
+        DBMS_OUTPUT.PUT_LINE('  Habitability Score: ' || v_score);
+        DBMS_OUTPUT.PUT_LINE('  Gravity: ' || v_grav);
+        DBMS_OUTPUT.PUT_LINE('---------------------------');
+    END;
+
+END CelestialManager;
+/
+
+
+
+CREATE OR REPLACE PROCEDURE InitDefaultCelestialObjects IS
+BEGIN
+    CelestialManager.AddDefaultCelestialObjects;
+END;
+/
+
+
+BEGIN
+    InitDefaultCelestialObjects;
+END;
+/
+
+SELECT * FROM CelestialObjects;
+
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+-- Using SEQUENCES to update table
+-- Step 1: Create Sequence (if not already created)
+CREATE SEQUENCE celestial_update_seq
+START WITH 100
+INCREMENT BY 1
+NOCACHE
+NOCYCLE;
+
+-- Step 2: Create Package Specification
+CREATE OR REPLACE PACKAGE CelestialUpdater AS
+    PROCEDURE UpdateLatestCelestialObject(
+        p_new_name        IN VARCHAR2,
+        p_new_category    IN VARCHAR2,
+        p_new_score       IN NUMBER,
+        p_new_gravity     IN NUMBER
+    );
+END CelestialUpdater;
+/
+
+-- Step 3: Create Package Body
+CREATE OR REPLACE PACKAGE BODY CelestialUpdater AS
+
+    PROCEDURE UpdateLatestCelestialObject(
+        p_new_name        IN VARCHAR2,
+        p_new_category    IN VARCHAR2,
+        p_new_score       IN NUMBER,
+        p_new_gravity     IN NUMBER
+    ) IS
+        v_old_id   NUMBER;
+        v_new_id   NUMBER;
+        v_old_name VARCHAR2(50);
+    BEGIN
+        -- Step 1: Get the most recent celestial object
+        SELECT object_id, object_name INTO v_old_id, v_old_name
+        FROM CelestialObjects
+        WHERE object_id = (SELECT MAX(object_id) FROM CelestialObjects);
+
+        -- Step 2: Get new ID from update sequence
+        SELECT celestial_update_seq.NEXTVAL INTO v_new_id FROM dual;
+
+        -- Step 3: Update the celestial object
+        UPDATE CelestialObjects
+        SET object_id = v_new_id,
+            object_name = p_new_name,
+            category = p_new_category,
+            habitability_score = p_new_score,
+            gravity = p_new_gravity
+        WHERE object_id = v_old_id;
+
+        -- Step 4: Output confirmation
+        DBMS_OUTPUT.PUT_LINE('Celestial object updated.');
+        DBMS_OUTPUT.PUT_LINE('Previous Name: ' || v_old_name || ' | Previous ID: ' || v_old_id);
+        DBMS_OUTPUT.PUT_LINE('New Name: ' || p_new_name || ' | New ID: ' || v_new_id);
+        DBMS_OUTPUT.PUT_LINE('Category: ' || p_new_category);
+        DBMS_OUTPUT.PUT_LINE('Habitability Score: ' || p_new_score);
+        DBMS_OUTPUT.PUT_LINE('Gravity: ' || p_new_gravity);
+    END;
+
+END CelestialUpdater;
+/
+
+-- Step 4: Procedure to call the update
+CREATE OR REPLACE PROCEDURE UpdateMostRecentCelestial IS
+BEGIN
+    CelestialUpdater.UpdateLatestCelestialObject(
+        p_new_name     => 'Xenon Prime',
+        p_new_category => 'Exoplanet',
+        p_new_score    => 8.3,
+        p_new_gravity  => 0.95
+    );
+END;
+/
+
+-- Step 5: Run the update
+BEGIN
+    UpdateMostRecentCelestial;
+END;
+/
+
+-- Optional: View updated table
+SELECT * FROM CelestialObjects ORDER BY object_id DESC;
+/*==================================================================================================================================*/
+-- Delete the SEQUENCES
+DROP SEQUENCE celestial_add_seq;
+DROP SEQUENCE celestial_update_seq;
+
+/*============================================================ INDEXES =============================================================*/
+
+-- a.  Search is one of common functionalities, index plays a critical role in search
+-- b.  create few (min 2) indexes for those tables where search is performed frequently 
+CREATE INDEX idx_missions_lead_date ON missions(lead_researcher_id, start_date);
+
+SELECT researcher_id, researcher_name
+FROM researchers
+WHERE (researcher_id) IN (
+    SELECT m.lead_researcher_id
+    FROM (
+            SELECT lead_researcher_id, start_date 
+            FROM missions
+        ) m, 
+        (
+            SELECT researcher_id, observation_date 
+            FROM observations
+        ) o
+    WHERE m.lead_researcher_id = o.researcher_id
+      AND m.start_date = o.observation_date
+);
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+CREATE INDEX idx_r_id_affiliation ON researchers(researcher_id, affiliation_id);
+
+SELECT 
+  r.researcher_name,
+  hp.research_id,
+  COUNT(*) AS planet_count
+FROM habitable_planets hp
+JOIN researchers r ON r.researcher_id = hp.research_id
+WHERE (
+  SELECT affiliation_id 
+  FROM researchers r2 
+  WHERE r2.researcher_id = r.researcher_id
+) > 1
+GROUP BY r.researcher_name, hp.research_id
+HAVING COUNT(*) > 1;
+/*==================================================================================================================================*/
+DROP INDEX idx_missions_lead_date;
+DROP INDEX idx_r_id_affiliation;
+
+/*======================================================== INDEXES + PACKEGES ======================================================*/
+
+CREATE INDEX idx_missions_lead_date ON missions(lead_researcher_id, start_date);
+
+-- Package Specification
+CREATE OR REPLACE PACKAGE ResearchMatchManager AS
+    PROCEDURE ShowMatchingResearchers;
+END ResearchMatchManager;
+/
+
+-- Package Body
+CREATE OR REPLACE PACKAGE BODY ResearchMatchManager AS
+
+    -- Global constant for index name
+    c_index_name CONSTANT VARCHAR2(30) := 'idx_missions_lead_date';
+
+    -- Private procedure to create index
+    PROCEDURE CreateLeadDateIndex IS
+    BEGIN
+        EXECUTE IMMEDIATE '
+            CREATE INDEX ' || c_index_name || '
+            ON missions(lead_researcher_id, start_date)
+        ';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLCODE = -955 THEN
+                NULL; -- Index already exists
+            ELSE
+                RAISE;
+            END IF;
+    END;
+
+    -- Public procedure to find matching researchers
+    PROCEDURE ShowMatchingResearchers IS
+    BEGIN
+        -- Ensure index is in place
+        CreateLeadDateIndex;
+
+        -- Display matching researchers
+        FOR rec IN (
+            SELECT researcher_id, researcher_name
+            FROM researchers
+            WHERE researcher_id IN (
+                SELECT m.lead_researcher_id
+                FROM (
+                        SELECT lead_researcher_id, start_date 
+                        FROM missions
+                    ) m,
+                    (
+                        SELECT researcher_id, observation_date 
+                        FROM observations
+                    ) o
+                WHERE m.lead_researcher_id = o.researcher_id
+                  AND m.start_date = o.observation_date
+            )
+        ) LOOP
+            DBMS_OUTPUT.PUT_LINE('ID: ' || rec.researcher_id || ' | Name: ' || rec.researcher_name);
+        END LOOP;
+    END;
+
+END ResearchMatchManager;
+/
+
+BEGIN
+    ResearchMatchManager.ShowMatchingResearchers;
+END;
+/
+/*----------------------------------------------------------------------------------------------------------------------*/
+
+CREATE INDEX idx_r_id_affiliation ON researchers(researcher_id, affiliation_id);
+
+-- Package Specification
+CREATE OR REPLACE PACKAGE HabitableResearchAnalysis AS
+    PROCEDURE ShowMultiAffiliatedResearchers;
+END HabitableResearchAnalysis;
+/
+
+-- Package Body
+CREATE OR REPLACE PACKAGE BODY HabitableResearchAnalysis AS
+
+    -- ? Global constant for index name
+    c_index_name CONSTANT VARCHAR2(30) := 'idx_r_id_affiliation';
+
+    -- ? Private procedure to create index if not exists
+    PROCEDURE CreateResearcherIndex IS
+    BEGIN
+        EXECUTE IMMEDIATE '
+            CREATE INDEX ' || c_index_name || '
+            ON researchers(researcher_id, affiliation_id)
+        ';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLCODE = -955 THEN
+                NULL; -- Index already exists
+            ELSE
+                RAISE;
+            END IF;
+    END;
+
+    --  Public procedure to show researchers with multiple planets and affiliations > 1
+    PROCEDURE ShowMultiAffiliatedResearchers IS
+    BEGIN
+        -- Ensure index is created
+        CreateResearcherIndex;
+
+        -- Run the query and print the result
+        FOR rec IN (
+            SELECT 
+              r.researcher_name,
+              hp.research_id,
+              COUNT(*) AS planet_count
+            FROM habitable_planets hp
+            JOIN researchers r ON r.researcher_id = hp.research_id
+            WHERE (
+              SELECT affiliation_id 
+              FROM researchers r2 
+              WHERE r2.researcher_id = r.researcher_id
+            ) > 1
+            GROUP BY r.researcher_name, hp.research_id
+            HAVING COUNT(*) > 1
+        ) LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                'Researcher: ' || rec.researcher_name || 
+                ' | ID: ' || rec.research_id || 
+                ' | Planets: ' || rec.planet_count
+            );
+        END LOOP;
+    END;
+
+END HabitableResearchAnalysis;
+/
+
+BEGIN
+    HabitableResearchAnalysis.ShowMultiAffiliatedResearchers;
+END;
+/
+
+/*==================================================================================================================================*/
+DROP INDEX idx_missions_lead_date;
+DROP INDEX idx_r_id_affiliation;
+
+/*======================================================= TRIGERS + PACKAGES =======================================================*/
+
+--Triggers
+--Automatically sets the observation_date
+--to the current timestamp when inserting a new observation
+CREATE OR REPLACE TRIGGER create_observation_trg
+BEFORE INSERT ON Observations
+FOR EACH ROW
+BEGIN
+    :NEW.observation_date := SYSDATE;
+END;
+/
+
+--Prevents inserting/updating observations with a
+--future observation_date by raising an error.
+CREATE OR REPLACE TRIGGER future_observations_trg
+BEFORE INSERT OR UPDATE ON Observations
+FOR EACH ROW
+BEGIN
+    IF :NEW.observation_date > SYSDATE THEN
+    RAISE_APPLICATION_ERROR(
+            -20001, 'Observations cannot be in future.'
+        );
+    END IF;
+END;
+/
+
+--Blocks new observations from being added to missions marked as completed.
+CREATE OR REPLACE TRIGGER mission_observation_trg
+BEFORE INSERT ON Mission_Observations
+FOR EACH ROW
+DECLARE
+    v_end_date Missions.end_date%TYPE;
+BEGIN
+    -- Check if the mission has an end date
+    SELECT end_date INTO v_end_date 
+    FROM Missions 
+    WHERE mission_id = :NEW.mission_id;
+
+    IF v_end_date IS NOT NULL THEN
+        RAISE_APPLICATION_ERROR(
+            -20001, 'Cannot add observations to a completed mission.'
+        );
+    END IF;
+END;
+
+/
+
+--Replaces `NULL` values in recommended_population with
+--0 during inserts/updates in habitable_planets.
+CREATE OR REPLACE TRIGGER habplanets_null_trg
+BEFORE INSERT OR UPDATE ON habitable_planets
+FOR EACH ROW
+BEGIN
+  IF :NEW.recommended_population IS NULL THEN
+    :NEW.recommended_population := 0;
+  END IF;
+END;
+/
+
+--Sets recommended_population to 0 if the planet is marked as non-habitable.
+CREATE OR REPLACE TRIGGER habplanets_habitable_trg
+BEFORE INSERT OR UPDATE ON habitable_planets
+FOR EACH ROW
+BEGIN
+  IF :NEW.is_habitable = 'N' THEN
+        :NEW.recommended_population := 0;
+  END IF;
+END;
+/
+
+/*==================================================================================================================================*/
+/*====================================================== FUNCTIONS + PACKAGES ======================================================*/
+
+-- 10. Package: simple_habitability_pkg
+CREATE OR REPLACE PACKAGE SIMPLE_HABITABILITY_PKG AS
+ 
+        -- Global constant defining the minimum score for an object to be considered habitable
+        G_MIN_HABITABLE_SCORE CONSTANT NUMBER := 5.0;
+ 
+        -- Function to check if a celestial object meets basic habitability criteria
+        FUNCTION IS_POTENTIALLY_HABITABLE(
+                P_OBJECT_ID IN NUMBER -- Input: ID of the celestial object
+        ) RETURN VARCHAR2;
+ 
+        -- Function to retrieve all habitability-related data for a celestial object
+        -- Returns a full row from CelestialObjects table using %ROWTYPE
+        FUNCTION GET_HABITABILITY_INFO(
+                P_OBJECT_ID IN NUMBER -- Input: ID of the celestial object
+        ) RETURN CELESTIALOBJECTS%ROWTYPE;
+END SIMPLE_HABITABILITY_PKG;
+/
+
+CREATE OR REPLACE PACKAGE BODY SIMPLE_HABITABILITY_PKG AS
+ 
+        -- Private variable to track the last object checked (for debugging/logging)
+        V_LAST_CHECKED_ID NUMBER := NULL;
+ 
+        -- **Private Helper Function**
+        -- Checks if a planet has essential elements (oxygen or water vapor)
+        -- Returns TRUE if either oxygen or water vapor is present ('Y')
+        FUNCTION HAS_ESSENTIAL_ELEMENTS(
+                P_OXYGEN IN CHAR, -- 'Y' if oxygen is present, 'N' otherwise
+                P_WATER_VAPOR IN CHAR -- 'Y' if water vapor is present, 'N' otherwise
+        ) RETURN BOOLEAN IS
+        BEGIN
+                RETURN (P_OXYGEN = 'Y'
+                OR P_WATER_VAPOR = 'Y');
+        END HAS_ESSENTIAL_ELEMENTS;
+ 
+
+        -- **Public Function 1: Check if an object is potentially habitable**
+        FUNCTION IS_POTENTIALLY_HABITABLE(
+                P_OBJECT_ID IN NUMBER
+        ) RETURN VARCHAR2 IS
+ 
+                -- Declare a variable to hold the full celestial object record
+                V_OBJECT CELESTIALOBJECTS%ROWTYPE;
+ 
+                -- Default result is 'No' unless conditions are met
+                V_RESULT VARCHAR2(3) := 'No';
+        BEGIN
+ 
+                -- Store the last checked ID (for tracking)
+                V_LAST_CHECKED_ID := P_OBJECT_ID;
+ 
+                -- Retrieve all habitability data for the given object
+                V_OBJECT := GET_HABITABILITY_INFO(P_OBJECT_ID);
+ 
+                -- **Habitability Conditions:**
+                -- 1. Score must be >= minimum threshold (5.0)
+                -- 2. Must have oxygen or water vapor
+                -- 3. Surface temperature must be between -50Â°C and 100Â°C
+                IF V_OBJECT.HABITABILITY_SCORE >= G_MIN_HABITABLE_SCORE AND HAS_ESSENTIAL_ELEMENTS(V_OBJECT.OXYGEN, V_OBJECT.WATER_VAPOR) AND V_OBJECT.SURFACE_TEMPERATURE BETWEEN -50 AND 100 THEN
+                        V_RESULT := 'Yes'; -- Object meets habitability criteria
+                END IF;
+
+                RETURN V_RESULT;
+        EXCEPTION
+ 
+                -- Handle case where object ID does not exist
+                WHEN NO_DATA_FOUND THEN
+                        RAISE_APPLICATION_ERROR(-20001, 'Object ID '
+                                                        || P_OBJECT_ID
+                                                        || ' not found');
+ 
+                        -- Handle any other unexpected errors
+                WHEN OTHERS THEN
+                        RAISE_APPLICATION_ERROR(-20002, 'Error checking habitability: '
+                                                        || SQLERRM);
+        END IS_POTENTIALLY_HABITABLE;
+ 
+
+        -- **Public Function 2: Retrieve full habitability data for an object**
+        FUNCTION GET_HABITABILITY_INFO(
+                P_OBJECT_ID IN NUMBER
+        ) RETURN CELESTIALOBJECTS%ROWTYPE IS
+ 
+                -- Variable to store the entire row from CelestialObjects
+                V_OBJECT CELESTIALOBJECTS%ROWTYPE;
+        BEGIN
+ 
+                -- Fetch all columns for the given object ID
+                SELECT
+                        * INTO V_OBJECT
+                FROM
+                        CELESTIALOBJECTS
+                WHERE
+                        OBJECT_ID = P_OBJECT_ID;
+                RETURN V_OBJECT; -- Return the complete record
+        EXCEPTION
+ 
+                -- Handle missing object
+                WHEN NO_DATA_FOUND THEN
+                        RAISE_APPLICATION_ERROR(-20003, 'Celestial object not found');
+ 
+                        -- Handle other database errors
+                WHEN OTHERS THEN
+                        RAISE_APPLICATION_ERROR(-20004, 'Error retrieving object data: '
+                                                        || SQLERRM);
+        END GET_HABITABILITY_INFO;
+END SIMPLE_HABITABILITY_PKG;
+/
+
+-- **Example 1: Check if Earth (ID=1), Mars (ID=2) and Venus (ID=3)) are habitable**
+-- Test the is_potentially_habitable function
+BEGIN
+        DBMS_OUTPUT.PUT_LINE('Earth habitable? '
+                             || SIMPLE_HABITABILITY_PKG.IS_POTENTIALLY_HABITABLE(1));
+        DBMS_OUTPUT.PUT_LINE('Mars habitable? '
+                             || SIMPLE_HABITABILITY_PKG.IS_POTENTIALLY_HABITABLE(2));
+        DBMS_OUTPUT.PUT_LINE('Venus habitable? '
+                             || SIMPLE_HABITABILITY_PKG.IS_POTENTIALLY_HABITABLE(3));
+END;
+/
+
+-- Test the get_habitability_info function, in this case we choose the planet Gliese 581g with the (id=5), to test it
+-- So, it will displays all the information of the planet, the name, score and Oxygen element
+DECLARE
+        V_PLANET CELESTIALOBJECTS%ROWTYPE;
+BEGIN
+        V_PLANET := SIMPLE_HABITABILITY_PKG.GET_HABITABILITY_INFO(5); -- Gliese 581g
+        DBMS_OUTPUT.PUT_LINE('Planet: '
+                             || V_PLANET.OBJECT_NAME);
+        DBMS_OUTPUT.PUT_LINE('Score: '
+                             || V_PLANET.HABITABILITY_SCORE);
+        DBMS_OUTPUT.PUT_LINE('Oxygen: '
+                             || V_PLANET.OXYGEN);
+END;
+/
+
+/*----------------------------------------------------------------------------------------------------------------------*/
+-- 11. Package: mission_analysis_pkg
+--Package mission _analysis_pkg that help to evaluate space missions
+CREATE OR REPLACE PACKAGE MISSION_ANALYSIS_PKG AS
+ 
+        -- Global constant for mission duration thresholds
+        G_LONG_MISSION_THRESHOLD CONSTANT NUMBER := 365; -- 1 year in days
+        FUNCTION CALCULATE_MISSION_EFFICIENCY(
+                P_MISSION_ID IN NUMBER
+        ) RETURN NUMBER;
+ 
+        -- Function to generate mission status report
+        FUNCTION GET_MISSION_STATUS(
+                P_MISSION_ID IN NUMBER
+        ) RETURN VARCHAR2;
+ 
+        -- Function to find missions by celestial object
+        FUNCTION FIND_MISSIONS_BY_OBJECT(
+                P_OBJECT_ID IN NUMBER
+        ) RETURN SYS_REFCURSOR;
+END MISSION_ANALYSIS_PKG;
+/
+
+CREATE OR REPLACE PACKAGE BODY MISSION_ANALYSIS_PKG AS
+ 
+        -- Private variable to track last analyzed mission
+        V_LAST_ANALYZED_ID NUMBER := NULL;
+ 
+        -- Private function to calculate observation success rate
+        FUNCTION CALCULATE_SUCCESS_RATE(
+                P_MISSION_ID IN NUMBER
+        ) RETURN NUMBER IS
+                V_TOTAL_OBSERVATIONS      NUMBER := 0;
+                V_SUCCESSFUL_OBSERVATIONS NUMBER := 0;
+        BEGIN
+ 
+                -- Count total observations for this mission
+                SELECT
+                        COUNT(*) INTO V_TOTAL_OBSERVATIONS
+                FROM
+                        MISSION_OBSERVATIONS
+                WHERE
+                        MISSION_ID = P_MISSION_ID;
+ 
+                -- Count successful observations
+                SELECT
+                        COUNT(*) INTO V_SUCCESSFUL_OBSERVATIONS
+                FROM
+                        MISSION_OBSERVATIONS
+                WHERE
+                        MISSION_ID = P_MISSION_ID
+                        AND OBSERVATION_SUCCESS = 'Y';
+ 
+                -- Calculate success percentage
+                RETURN CASE WHEN V_TOTAL_OBSERVATIONS > 0 THEN ROUND((V_SUCCESSFUL_OBSERVATIONS / V_TOTAL_OBSERVATIONS) * 100) ELSE 0 END;
+        EXCEPTION
+                WHEN OTHERS THEN
+                        RAISE_APPLICATION_ERROR(-20010, 'Error calculating success rate: '
+                                                        || SQLERRM);
+        END CALCULATE_SUCCESS_RATE;
+
+        FUNCTION GET_MISSION_DURATION(
+                P_MISSION_ID IN NUMBER
+        ) RETURN NUMBER IS
+                V_DURATION NUMBER;
+        BEGIN
+                SELECT
+                        NVL(END_DATE, SYSDATE) - START_DATE INTO V_DURATION
+                FROM
+                        MISSIONS
+                WHERE
+                        MISSION_ID = P_MISSION_ID;
+                RETURN V_DURATION;
+        EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                        RETURN 0;
+        END GET_MISSION_DURATION;
+
+        FUNCTION CALCULATE_MISSION_EFFICIENCY(
+                P_MISSION_ID IN NUMBER
+        ) RETURN NUMBER IS
+                V_SUCCESS_RATE   NUMBER;
+                V_DURATION       NUMBER;
+                V_DATA_COLLECTED NUMBER := 0;
+                V_EFFICIENCY     NUMBER;
+        BEGIN
+                V_LAST_ANALYZED_ID := P_MISSION_ID;
+ 
+                -- Get success rate
+                V_SUCCESS_RATE := CALCULATE_SUCCESS_RATE(P_MISSION_ID);
+ 
+                -- Get mission duration
+                V_DURATION := GET_MISSION_DURATION(P_MISSION_ID);
+ 
+                -- Get total data collected (in MB)
+                SELECT
+                        NVL(SUM(DATA_COLLECTED_SIZE), 0) INTO V_DATA_COLLECTED
+                FROM
+                        MISSION_OBSERVATIONS
+                WHERE
+                        MISSION_ID = P_MISSION_ID;
+ 
+                -- Get total data collected (in MB)
+                SELECT
+                        NVL(SUM(DATA_COLLECTED_SIZE), 0) INTO V_DATA_COLLECTED
+                FROM
+                        MISSION_OBSERVATIONS
+                WHERE
+                        MISSION_ID = P_MISSION_ID;
+ 
+                -- Calculate efficiency score (weighted formula)
+                V_EFFICIENCY := (V_SUCCESS_RATE * 0.6) + -- Success rate (60%)
+                (LEAST(V_DATA_COLLECTED/100, 100) * 0.3) + -- Data collected (30%, capped at 100MB=full score)
+                (CASE WHEN V_DURATION < G_LONG_MISSION_THRESHOLD THEN 100 ELSE 50 END * 0.1);
+                RETURN LEAST(V_EFFICIENCY, 100); -- Cap at 100
+        EXCEPTION
+                WHEN OTHERS THEN
+                        RAISE_APPLICATION_ERROR(-20011, 'Error calculating efficiency: '
+                                                        || SQLERRM);
+        END CALCULATE_MISSION_EFFICIENCY;
+ 
+
+        -- Public function to generate mission status report
+        FUNCTION GET_MISSION_STATUS(
+                P_MISSION_ID IN NUMBER
+        ) RETURN VARCHAR2 IS
+                V_MISSION    MISSIONS%ROWTYPE;
+                V_STATUS     VARCHAR2(20);
+                V_REPORT     VARCHAR2(1000);
+                V_EFFICIENCY NUMBER;
+        BEGIN
+ 
+                -- Get mission details
+                SELECT
+                        * INTO V_MISSION
+                FROM
+                        MISSIONS
+                WHERE
+                        MISSION_ID = P_MISSION_ID;
+ 
+                -- Determine mission status
+                V_STATUS := CASE WHEN V_MISSION.END_DATE IS NULL THEN 'ACTIVE' WHEN SYSDATE - V_MISSION.END_DATE < 30 THEN 'RECENTLY COMPLETED' ELSE 'COMPLETED' END;
+                V_EFFICIENCY := CALCULATE_MISSION_EFFICIENCY(P_MISSION_ID);
+ 
+                -- Build report
+                V_REPORT := 'Mission: '
+                            || V_MISSION.MISSION_NAME
+                            || CHR(10)
+                            || 'Status: '
+                            || V_STATUS
+                            || CHR(10)
+                            || 'Purpose: '
+                            || V_MISSION.MISSION_PURPOSE
+                            || CHR(10)
+                            || 'Duration: '
+                            || ROUND(GET_MISSION_DURATION(P_MISSION_ID))
+                            || ' days'
+                            || CHR(10)
+                            || 'Efficiency Score: '
+                            || V_EFFICIENCY
+                            || '/100'
+                            || CHR(10)
+                            || 'Success Rate: '
+                            || CALCULATE_SUCCESS_RATE(P_MISSION_ID)
+                            || '%'
+                            || CHR(10)
+                            || 'Lead Researcher ID: '
+                            || V_MISSION.LEAD_RESEARCHER_ID;
+                RETURN V_REPORT;
+        EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                        RETURN 'Mission not found';
+                WHEN OTHERS THEN
+                        RAISE_APPLICATION_ERROR(-20012, 'Error generating status report: '
+                                                        || SQLERRM);
+        END GET_MISSION_STATUS;
+
+        FUNCTION FIND_MISSIONS_BY_OBJECT(
+                P_OBJECT_ID IN NUMBER
+        ) RETURN SYS_REFCURSOR IS
+                V_CURSOR SYS_REFCURSOR; --provides a way to quickly declare a weakly typed REF cursor that can process almost any cursor
+        BEGIN
+                OPEN V_CURSOR FOR
+                        SELECT
+                                DISTINCT M.MISSION_ID,
+                                M.MISSION_NAME,
+                                M.MISSION_PURPOSE
+                        FROM
+                                MISSIONS             M
+                                JOIN MISSION_OBSERVATIONS MO
+                                ON M.MISSION_ID = MO.MISSION_ID
+                                JOIN OBSERVATIONS O
+                                ON MO.OBSERVATION_ID = O.OBSERVATION_ID
+                        WHERE
+                                O.OBJECT_ID = P_OBJECT_ID;
+                RETURN V_CURSOR;
+        EXCEPTION
+                WHEN OTHERS THEN
+                        RAISE_APPLICATION_ERROR(-20013, 'Error finding missions: '
+                                                        || SQLERRM);
+        END FIND_MISSIONS_BY_OBJECT;
+END MISSION_ANALYSIS_PKG;
+/
+
+-- 1. Calculate efficiency for a mission
+DECLARE
+        V_EFFICIENCY NUMBER;
+BEGIN
+        V_EFFICIENCY := MISSION_ANALYSIS_PKG.CALCULATE_MISSION_EFFICIENCY(1);
+        DBMS_OUTPUT.PUT_LINE('Mission Efficiency: '
+                             || V_EFFICIENCY
+                             || '%');
+END;
+/
+
+-- 2. Get full status report for a mission
+BEGIN
+        DBMS_OUTPUT.PUT_LINE(MISSION_ANALYSIS_PKG.GET_MISSION_STATUS(2));
+END;
+/
+
+-- 3. Find all missions related to Mars (object_id = 2)
+DECLARE
+        V_MISSIONS   SYS_REFCURSOR;
+        V_MISSION_ID NUMBER;
+        V_NAME       VARCHAR2(100);
+        V_PURPOSE    VARCHAR2(100);
+BEGIN
+        V_MISSIONS := MISSION_ANALYSIS_PKG.FIND_MISSIONS_BY_OBJECT(2);
+        DBMS_OUTPUT.PUT_LINE('Missions studying Mars:');
+        DBMS_OUTPUT.PUT_LINE('----------------------');
+        LOOP
+                FETCH V_MISSIONS INTO V_MISSION_ID, V_NAME, V_PURPOSE;
+                EXIT WHEN V_MISSIONS%NOTFOUND;
+                DBMS_OUTPUT.PUT_LINE(V_MISSION_ID
+                                     || ' | '
+                                     || V_NAME
+                                     || ' | '
+                                     || V_PURPOSE);
+        END LOOP;
+
+        CLOSE V_MISSIONS;
+END;
+/
+
+/*==================================================================================================================================*/
+/*====================================================== PROCEDURES + PACKAGES =====================================================*/
+
+//Step 1
+CREATE OR REPLACE PACKAGE SpaceResearchPackage AS
+    PROCEDURE AddCelestialObject(
+        p_object_id NUMBER,
+        p_object_name VARCHAR2,
+        p_category VARCHAR2,
+        p_distance_light_years NUMBER,
+        p_discovery_date DATE,
+        p_in_solar_system CHAR,
+        p_habitability_score NUMBER,
+        p_surface_temperature NUMBER,
+        p_gravity NUMBER,
+        p_nitrogen CHAR,
+        p_oxygen CHAR,
+        p_co2 CHAR,
+        p_sulfuric_acid CHAR,
+        p_hydrogen CHAR,
+        p_helium CHAR,
+        p_methane CHAR,
+        p_water_vapor CHAR,
+        p_silicates CHAR,
+        p_iron CHAR,
+        p_nickel CHAR
+    );
+
+    PROCEDURE UpdateCelestialObject(
+        p_object_id NUMBER,
+        p_object_name VARCHAR2,
+        p_category VARCHAR2,
+        p_distance_light_years NUMBER,
+        p_discovery_date DATE,
+        p_in_solar_system CHAR,
+        p_habitability_score NUMBER,
+        p_surface_temperature NUMBER,
+        p_gravity NUMBER,
+        p_nitrogen CHAR,
+        p_oxygen CHAR,
+        p_co2 CHAR,
+        p_sulfuric_acid CHAR,
+        p_hydrogen CHAR,
+        p_helium CHAR,
+        p_methane CHAR,
+        p_water_vapor CHAR,
+        p_silicates CHAR,
+        p_iron CHAR,
+        p_nickel CHAR
+    );
+
+    PROCEDURE DeleteCelestialObject(p_object_id NUMBER);
+
+    PROCEDURE AddEvent(
+        p_event_id NUMBER,
+        p_event_name VARCHAR2,
+        p_event_type VARCHAR2,
+        p_event_date DATE,
+        p_visibility_score NUMBER,
+        p_impact_on_habitability VARCHAR2,
+        p_estimated_duration_days NUMBER
+    );
+
+    PROCEDURE UpdateEvent(
+        p_event_id NUMBER,
+        p_event_name VARCHAR2,
+        p_event_type VARCHAR2,
+        p_event_date DATE,
+        p_visibility_score NUMBER,
+        p_impact_on_habitability VARCHAR2,
+        p_estimated_duration_days NUMBER
+    );
+
+    PROCEDURE DeleteEvent(p_event_id NUMBER);
+
+    PROCEDURE AddResearcher(
+        p_researcher_id NUMBER,
+        p_researcher_name VARCHAR2,
+        p_contact_email VARCHAR2,
+        p_phone_number VARCHAR2,
+        p_affiliation_id NUMBER
+    );
+
+    PROCEDURE UpdateResearcher(
+        p_researcher_id NUMBER,
+        p_researcher_name VARCHAR2,
+        p_contact_email VARCHAR2,
+        p_phone_number VARCHAR2,
+        p_affiliation_id NUMBER
+    );
+
+    PROCEDURE DeleteResearcher(p_researcher_id NUMBER);
+
+    PROCEDURE AddMission(
+        p_mission_id NUMBER,
+        p_mission_name VARCHAR2,
+        p_mission_purpose VARCHAR2,
+        p_start_date DATE,
+        p_end_date DATE,
+        p_lead_researcher_id NUMBER,
+        p_affiliation_id NUMBER
+    );
+
+    PROCEDURE UpdateMission(
+        p_mission_id NUMBER,
+        p_mission_name VARCHAR2,
+        p_mission_purpose VARCHAR2,
+        p_start_date DATE,
+        p_end_date DATE,
+        p_lead_researcher_id NUMBER,
+        p_affiliation_id NUMBER
+    );
+
+    PROCEDURE DeleteMission(p_mission_id NUMBER);
+END SpaceResearchPackage;
+/
+//Step 2 of procedure
+CREATE OR REPLACE PACKAGE BODY SpaceResearchPackage AS
+
+    PROCEDURE AddCelestialObject(
+        p_object_id NUMBER,
+        p_object_name VARCHAR2,
+        p_category VARCHAR2,
+        p_distance_light_years NUMBER,
+        p_discovery_date DATE,
+        p_in_solar_system CHAR,
+        p_habitability_score NUMBER,
+        p_surface_temperature NUMBER,
+        p_gravity NUMBER,
+        p_nitrogen CHAR,
+        p_oxygen CHAR,
+        p_co2 CHAR,
+        p_sulfuric_acid CHAR,
+        p_hydrogen CHAR,
+        p_helium CHAR,
+        p_methane CHAR,
+        p_water_vapor CHAR,
+        p_silicates CHAR,
+        p_iron CHAR,
+        p_nickel CHAR
+    ) IS
+    BEGIN
+        INSERT INTO CelestialObjects (
+            object_id, object_name, category, distance_light_years,
+            discovery_date, in_solar_system, habitability_score,
+            surface_temperature, gravity, nitrogen, oxygen, co2,
+            sulfuric_acid, hydrogen, helium, methane, water_vapor,
+            silicates, iron, nickel
+        ) VALUES (
+            p_object_id, p_object_name, p_category, p_distance_light_years,
+            p_discovery_date, p_in_solar_system, p_habitability_score,
+            p_surface_temperature, p_gravity, p_nitrogen, p_oxygen, p_co2,
+            p_sulfuric_acid, p_hydrogen, p_helium, p_methane, p_water_vapor,
+            p_silicates, p_iron, p_nickel
+        );
+    END AddCelestialObject;
+
+    PROCEDURE UpdateCelestialObject(
+        p_object_id NUMBER,
+        p_object_name VARCHAR2,
+        p_category VARCHAR2,
+        p_distance_light_years NUMBER,
+        p_discovery_date DATE,
+        p_in_solar_system CHAR,
+        p_habitability_score NUMBER,
+        p_surface_temperature NUMBER,
+        p_gravity NUMBER,
+        p_nitrogen CHAR,
+        p_oxygen CHAR,
+        p_co2 CHAR,
+        p_sulfuric_acid CHAR,
+        p_hydrogen CHAR,
+        p_helium CHAR,
+        p_methane CHAR,
+        p_water_vapor CHAR,
+        p_silicates CHAR,
+        p_iron CHAR,
+        p_nickel CHAR
+    ) IS
+    BEGIN
+        UPDATE CelestialObjects
+        SET object_name = p_object_name,
+            category = p_category,
+            distance_light_years = p_distance_light_years,
+            discovery_date = p_discovery_date,
+            in_solar_system = p_in_solar_system,
+            habitability_score = p_habitability_score,
+            surface_temperature = p_surface_temperature,
+            gravity = p_gravity,
+            nitrogen = p_nitrogen,
+            oxygen = p_oxygen,
+            co2 = p_co2,
+            sulfuric_acid = p_sulfuric_acid,
+            hydrogen = p_hydrogen,
+            helium = p_helium,
+            methane = p_methane,
+            water_vapor = p_water_vapor,
+            silicates = p_silicates,
+            iron = p_iron,
+            nickel = p_nickel
+        WHERE object_id = p_object_id;
+    END UpdateCelestialObject;
+
+    PROCEDURE DeleteCelestialObject(p_object_id NUMBER) IS
+    BEGIN
+        DELETE FROM CelestialObjects WHERE object_id = p_object_id;
+    END DeleteCelestialObject;
+
+    PROCEDURE AddEvent(
+        p_event_id NUMBER,
+        p_event_name VARCHAR2,
+        p_event_type VARCHAR2,
+        p_event_date DATE,
+        p_visibility_score NUMBER,
+        p_impact_on_habitability VARCHAR2,
+        p_estimated_duration_days NUMBER
+    ) IS
+    BEGIN
+        INSERT INTO Events (
+            event_id, event_name, event_type, event_date,
+            visibility_score, impact_on_habitability, estimated_duration_days
+        ) VALUES (
+            p_event_id, p_event_name, p_event_type, p_event_date,
+            p_visibility_score, p_impact_on_habitability, p_estimated_duration_days
+        );
+    END AddEvent;
+
+    PROCEDURE UpdateEvent(
+        p_event_id NUMBER,
+        p_event_name VARCHAR2,
+        p_event_type VARCHAR2,
+        p_event_date DATE,
+        p_visibility_score NUMBER,
+        p_impact_on_habitability VARCHAR2,
+        p_estimated_duration_days NUMBER
+    ) IS
+    BEGIN
+        UPDATE Events
+        SET event_name = p_event_name,
+            event_type = p_event_type,
+            event_date = p_event_date,
+            visibility_score = p_visibility_score,
+            impact_on_habitability = p_impact_on_habitability,
+            estimated_duration_days = p_estimated_duration_days
+        WHERE event_id = p_event_id;
+    END UpdateEvent;
+
+    PROCEDURE DeleteEvent(p_event_id NUMBER) IS
+    BEGIN
+        DELETE FROM Events WHERE event_id = p_event_id;
+    END DeleteEvent;
+
+    PROCEDURE AddResearcher(
+        p_researcher_id NUMBER,
+        p_researcher_name VARCHAR2,
+        p_contact_email VARCHAR2,
+        p_phone_number VARCHAR2,
+        p_affiliation_id NUMBER
+    ) IS
+    BEGIN
+        INSERT INTO Researchers (
+            researcher_id, researcher_name, contact_email,
+            phone_number, affiliation_id
+        ) VALUES (
+            p_researcher_id, p_researcher_name, p_contact_email,
+            p_phone_number, p_affiliation_id
+        );
+    END AddResearcher;
+
+    PROCEDURE UpdateResearcher(
+        p_researcher_id NUMBER,
+        p_researcher_name VARCHAR2,
+        p_contact_email VARCHAR2,
+        p_phone_number VARCHAR2,
+        p_affiliation_id NUMBER
+    ) IS
+    BEGIN
+        UPDATE Researchers
+        SET researcher_name = p_researcher_name,
+            contact_email = p_contact_email,
+            phone_number = p_phone_number,
+            affiliation_id = p_affiliation_id
+        WHERE researcher_id = p_researcher_id;
+    END UpdateResearcher;
+
+    PROCEDURE DeleteResearcher(p_researcher_id NUMBER) IS
+    BEGIN
+        DELETE FROM Researchers WHERE researcher_id = p_researcher_id;
+    END DeleteResearcher;
+
+    PROCEDURE AddMission(
+        p_mission_id NUMBER,
+        p_mission_name VARCHAR2,
+        p_mission_purpose VARCHAR2,
+        p_start_date DATE,
+        p_end_date DATE,
+        p_lead_researcher_id NUMBER,
+        p_affiliation_id NUMBER
+    ) IS
+    BEGIN
+        INSERT INTO Missions (
+            mission_id, mission_name, mission_purpose,
+            start_date, end_date, lead_researcher_id, affiliation_id
+        ) VALUES (
+            p_mission_id, p_mission_name, p_mission_purpose,
+            p_start_date, p_end_date, p_lead_researcher_id, p_affiliation_id
+        );
+    END AddMission;
+
+    PROCEDURE UpdateMission(
+        p_mission_id NUMBER,
+        p_mission_name VARCHAR2,
+        p_mission_purpose VARCHAR2,
+        p_start_date DATE,
+        p_end_date DATE,
+        p_lead_researcher_id NUMBER,
+        p_affiliation_id NUMBER
+    ) IS
+    BEGIN
+        UPDATE Missions
+        SET mission_name = p_mission_name,
+            mission_purpose = p_mission_purpose,
+            start_date = p_start_date,
+            end_date = p_end_date,
+            lead_researcher_id = p_lead_researcher_id,
+            affiliation_id = p_affiliation_id
+        WHERE mission_id = p_mission_id;
+    END UpdateMission;
+
+    PROCEDURE DeleteMission(p_mission_id NUMBER) IS
+    BEGIN
+        DELETE FROM Missions WHERE mission_id = p_mission_id;
+    END DeleteMission;
+
+END SpaceResearchPackage;
+/
+-- Example of inserting a new celestial object
+--BEGIN
+--    SpaceResearchPackage.AddCelestialObject(
+--        p_object_id => 22,
+--        p_object_name => 'New Planet',
+--        p_category => 'Planet',
+--        p_distance_light_years => 10.0,
+--        p_discovery_date => SYSDATE,
+--        p_in_solar_system => 'N',
+--        p_habitability_score => 5.0,
+--        p_surface_temperature => 20.0,
+--        p_gravity => 1.0,
+--        p_nitrogen => 'Y',
+--        p_oxygen => 'Y',
+--        p_co2 => 'N',
+--        p_sulfuric_acid => 'N',
+--        p_hydrogen => 'N',
+--        p_helium => 'N',
+--        p_methane => 'N',
+--        p_water_vapor => 'N',
+--        p_silicates => 'N',
+--        p_iron => 'N',
+--        p_nickel => 'N'
+--    );
+--END;
+/
+/*==================================================================================================================================*/
+COMMIT;
+/*==================================================================================================================================*/
