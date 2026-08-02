@@ -13,6 +13,31 @@ This project was developed as part of the Advanced Database Concepts course at C
 
 The project combines database engineering principles with an interactive frontend interface to create a complete astronomy management platform.
 
+## Docker Compose bootstrap script (local development)
+
+For local Docker Compose integration with the frontend/backend stack, this repository owns the non-destructive bootstrap script:
+
+- `sql/docker-compose/init_celestial_objects_bootstrap.sql`
+
+Purpose:
+
+- Initialize the `CELESTIALOBJECTS` table required by the read-only API.
+- Preserve existing tables and data.
+- Allow safe repeat execution without duplicate sample rows.
+
+Run manually from the `Astro-Track-Frontend` compose project:
+
+```powershell
+docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/sql/docker-compose/init_celestial_objects_bootstrap.sql"
+```
+
+Safety characteristics:
+
+- No `DROP TABLE`, `DROP USER`, or `PURGE` operations.
+- Handles table-already-exists scenarios safely.
+- Adds constraints only when missing.
+- Inserts sample rows only when they do not already exist.
+
 ---
 
 ## 🎯 Objectives
