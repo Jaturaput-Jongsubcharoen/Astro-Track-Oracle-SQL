@@ -24,6 +24,11 @@ Purpose:
 - Initialize the `CELESTIALOBJECTS` table required by the read-only API.
 - Preserve existing tables and data.
 - Allow safe repeat execution without duplicate sample rows.
+- Seed the full 21-row local-development `CELESTIALOBJECTS` sample dataset.
+
+Seed record source:
+
+- The records are taken from the `CELESTIALOBJECTS` seed section of `sql/Astro_Track_Project.sql`.
 
 Run manually from the `Astro-Track-Frontend` compose project:
 
@@ -37,6 +42,7 @@ Safety characteristics:
 - Handles table-already-exists scenarios safely.
 - Adds constraints only when missing.
 - Inserts sample rows only when they do not already exist.
+- Preserves existing rows and does not overwrite manually edited data.
 
 ---
 
