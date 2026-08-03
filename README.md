@@ -68,13 +68,36 @@ docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_
 
 Included in bootstrap:
 
-- Core schema objects and package definitions required for the project model.
+- Core schema objects and required package definitions from `sql/docker-compose/07_packages.sql`:
+	- `ResearchMatchManager`
+	- `HabitableResearchAnalysis`
+	- `SIMPLE_HABITABILITY_PKG`
+	- `MISSION_ANALYSIS_PKG`
 
 Excluded from automatic bootstrap execution:
 
 - Demonstration `BEGIN ... END;` execution blocks.
 - Sample package/procedure invocation calls that insert or update demonstration records.
 - Demonstration `UPDATE` workflows and drop/recreate demo cleanup commands from the source project SQL.
+
+Optional legacy demonstration packages:
+
+- Manual compile script: `sql/demo/legacy_packages.sql`
+- Not executed by `bootstrap_all.sql`
+- Includes demonstration-only package definitions:
+	- `CelestialManager`
+	- `SpaceResearchPackage` (add/update wrapper procedures only)
+
+Retired from required and optional bootstrap compile:
+
+- `CelestialUpdater`
+	- Reason: it rewrites `OBJECT_ID` values and can break foreign key relationships for existing rows.
+
+Manual compile command for optional legacy packages:
+
+```powershell
+docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/sql/demo/legacy_packages.sql"
+```
 
 ---
 
