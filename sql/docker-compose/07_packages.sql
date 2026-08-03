@@ -1,5 +1,6 @@
 SET SERVEROUTPUT ON;
 PROMPT [07_packages] Creating or replacing package specs and bodies...
+PROMPT [07_packages] Legacy demonstration packages are intentionally excluded from required bootstrap.
 
 CREATE OR REPLACE PACKAGE ResearchMatchManager AS
     PROCEDURE ShowMatchingResearchers;
