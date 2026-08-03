@@ -13,36 +13,68 @@ This project was developed as part of the Advanced Database Concepts course at C
 
 The project combines database engineering principles with an interactive frontend interface to create a complete astronomy management platform.
 
-## Docker Compose bootstrap script (local development)
+## Docker Compose bootstrap scripts (local development)
 
-For local Docker Compose integration with the frontend/backend stack, this repository owns the non-destructive bootstrap script:
+For local Docker Compose integration with the frontend/backend stack, this repository owns all non-destructive bootstrap scripts under:
 
-- `sql/docker-compose/init_celestial_objects_bootstrap.sql`
+- `sql/docker-compose/`
 
-Purpose:
+### Script structure and order
 
-- Initialize the `CELESTIALOBJECTS` table required by the read-only API.
-- Preserve existing tables and data.
-- Allow safe repeat execution without duplicate sample rows.
-- Seed the full 21-row local-development `CELESTIALOBJECTS` sample dataset.
+1. `01_tables.sql`
+2. `02_constraints.sql`
+3. `03_seed_data.sql`
+4. `04_indexes.sql`
+5. `05_sequences.sql`
+6. `06_triggers.sql`
+7. `07_packages.sql`
+8. `08_procedures.sql`
+9. `09_functions.sql`
+10. `bootstrap_all.sql` (orchestrates scripts 01-09)
 
-Seed record source:
+Required schema objects covered:
 
-- The records are taken from the `CELESTIALOBJECTS` seed section of `sql/Astro_Track_Project.sql`.
+- Tables: `CELESTIALOBJECTS`, `EVENTS`, `AFFILIATIONS`, `RESEARCHERS`, `RESEARCHPAPERS`, `TELESCOPES`, `OBSERVATIONS`, `MISSIONS`, `MISSION_OBSERVATIONS`, `HABITABLE_PLANETS`
+- Constraints, indexes, sequences, triggers, and package-based PL/SQL logic sourced from `sql/Astro_Track_Project.sql`
 
-Run manually from the `Astro-Track-Frontend` compose project:
+### Manual execution from Docker Compose
+
+Run from the `Astro-Track-Frontend` compose project:
 
 ```powershell
-docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/sql/docker-compose/init_celestial_objects_bootstrap.sql"
+docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/sql/docker-compose/bootstrap_all.sql"
 ```
 
-Safety characteristics:
+### Non-destructive behavior
 
-- No `DROP TABLE`, `DROP USER`, or `PURGE` operations.
-- Handles table-already-exists scenarios safely.
-- Adds constraints only when missing.
-- Inserts sample rows only when they do not already exist.
-- Preserves existing rows and does not overwrite manually edited data.
+- No `DROP TABLE`, `DROP USER`, `PURGE`, `TRUNCATE`, or destructive reset operations.
+- Existing tables are preserved.
+- Constraints/indexes/sequences are created only when missing.
+- Seed inserts are guarded to avoid duplicate primary-key rows on rerun.
+- Existing rows are not overwritten by normal reruns.
+
+### Fresh database instructions
+
+- Start Oracle with persistent storage via Docker Compose.
+- Run `bootstrap_all.sql` once to initialize schema and baseline seed data.
+- Do not use volume deletion/reset commands as part of normal bootstrap.
+
+### Rerun instructions
+
+- Re-running `bootstrap_all.sql` is supported and expected.
+- The scripts are designed to keep existing schema/data and avoid duplicate PK inserts.
+
+### Required vs optional demonstration logic
+
+Included in bootstrap:
+
+- Core schema objects and package definitions required for the project model.
+
+Excluded from automatic bootstrap execution:
+
+- Demonstration `BEGIN ... END;` execution blocks.
+- Sample package/procedure invocation calls that insert or update demonstration records.
+- Demonstration `UPDATE` workflows and drop/recreate demo cleanup commands from the source project SQL.
 
 ---
 
