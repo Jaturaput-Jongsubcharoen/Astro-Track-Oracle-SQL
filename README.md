@@ -5,6 +5,15 @@
 ![GitHub](https://img.shields.io/badge/Git-Version%20Control-black)
 ![Database](https://img.shields.io/badge/Database-Administration-green)
 
+# 🌐 Live Deployment
+
+| Component | URL |
+|------------|-----|
+| Frontend | https://thankful-desert-046da3c0f.7.azurestaticapps.net |
+| Backend API | https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io |
+| Health Check | https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/health |
+| Database Health Check | https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/health/database |
+
 ## 📖 Overview
 
 Astro Track is a full-stack astronomical research database management system designed to store, manage, analyze, and visualize information related to celestial objects, astronomical events, researchers, research papers, telescopes, space missions, and potentially habitable planets.
@@ -12,6 +21,34 @@ Astro Track is a full-stack astronomical research database management system des
 This project was developed as part of the Advanced Database Concepts course at Centennial College and demonstrates practical database administration (DBA), relational database design, PL/SQL development, query optimization, indexing strategies, trigger implementation, and frontend integration.
 
 The project combines database engineering principles with an interactive frontend interface to create a complete astronomy management platform.
+
+# ☁️ Production Architecture
+
+```text
+Azure Static Web Apps (Angular)
+                │
+                ▼
+Azure Container Apps (ASP.NET Core)
+                │
+                ▼
+Oracle Autonomous Database
+```
+
+# 🔗 Related Repositories
+
+| Repository | Link |
+|------|------|
+| Frontend | https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Frontend |
+| Backend | https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Backend |
+| Database | https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Oracle-SQL |
+```
+
+The application consists of three repositories:
+
+- Astro-Track-Frontend
+- Astro-Track-Backend
+- Astro-Track-Oracle-SQL
+```
 
 ## Docker Compose bootstrap scripts (local development)
 
