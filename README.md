@@ -5,6 +5,8 @@
 ![GitHub](https://img.shields.io/badge/Git-Version%20Control-black)
 ![Database](https://img.shields.io/badge/Database-Administration-green)
 
+<img width="1824" height="979" alt="Relational_Model_AstroTrack_5" src="https://github.com/user-attachments/assets/d1a38f50-d392-4217-b614-17bda7885138" />
+
 # 🌐 Live Deployment
 
 | Component | URL |
